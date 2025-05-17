@@ -290,6 +290,21 @@
       });
     });
   </script>
+
+  <script type="module">
+    import { onAuthStateChanged } from './authStatus.js';
+
+    onAuthStateChanged(user => {
+      if (user) {
+        console.log('ログイン中:', user.displayName);
+        // ログイン済みのUI表示など
+      } else {
+        console.log('未ログイン');
+        // ログインボタン表示など
+      }
+    });
+  </script>
+
 </body>
 
 </html>
