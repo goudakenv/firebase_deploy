@@ -49,9 +49,9 @@
 
 
 #postsList li {
-    margin-bottom: 1em;
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 0.5em;
+    margin: 12px 0; /* 上下12pxずつ空ける */
+  padding: 8px;
+  border-bottom: 1px solid #ccc; /* 区切り線（お好みで） */
     text-align: center;
 }
 
