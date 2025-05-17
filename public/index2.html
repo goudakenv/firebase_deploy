@@ -165,12 +165,12 @@
 
   <h2>掲示板</h2>
 
-  <form id="contactForm">
-    <input type="text" id="whoToMeet" placeholder="話したい人" required /><br />
-    <div id="additionalFields"></div>
-    <button type="button" id="post-btn">+</button><br />
-    <button type="submit">送信</button>
+  <form id="boardForm">
+    <input type="text" id="postTitle" name="postTitle" placeholder="タイトル" required /><br />
+    <textarea id="postContent" name="postContent" placeholder="投稿内容" rows="5" required></textarea><br />
+    <button type="submit">投稿する</button>
   </form>
+
 
   <!-- Firebase SDK -->
   <script type="module">
