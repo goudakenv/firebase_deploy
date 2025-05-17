@@ -348,25 +348,25 @@ button[type="submit"]:hover {
     bottom: 0;
     left: 0;
     width: 100%;
-    /* background-color: #4a4a4a; */
-    /* color: var(--white); */
+    background-color: #4a4a4a;
+    color: var(--white);
     text-align: center;
-    padding: var(--sp-lg);
+    padding: 2px 12px;
     font-size: var(--fs-base);
-    /* border-top: 1px solid #666; */
+    border-top: 1px solid #666;
     z-index: 1000;
 }
 
 
 .footer-github a {
-    /* color: var(--white); */
+    color: var(--white);
     text-decoration: none;
     word-break: break-all;
     transition: all 0.3s ease;
 }
 
 .footer-github a:hover {
-    color: var(--accent-dark);
+    color: var(--accent-white);
     background-color: rgba(255, 255, 255, 0.15);
     text-shadow: 0 3px 8px rgba(255, 255, 255, 0.5);
     transform: translateY(-4px) scale(1.05);
