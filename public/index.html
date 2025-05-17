@@ -209,6 +209,17 @@
           });
       });
 
+      // サインアウトイベントはここで一度だけ登録
+      signOutBtn.addEventListener('click', () => {
+        signOut(auth)
+          .then(() => {
+            // サインアウト後のUI処理は onAuthStateChanged の中で行うのでここでは不要
+          })
+          .catch((error) => {
+            console.error('サインアウト失敗:', error);
+          });
+      });
+
       auth.onAuthStateChanged((user) => {
         if (user) {
           userInfoDiv.innerHTML = `
@@ -218,22 +229,7 @@
           `;
           userInfoDiv.style.display = 'block';
           googleSignInBtn.style.display = 'none';
-
-          // サインアウトボタンを表示
           signOutBtnContainer.style.display = 'block';
-
-          // サインアウト処理
-          signOutBtn.addEventListener('click', () => {
-            signOut(auth)
-              .then(() => {
-                userInfoDiv.style.display = 'none';
-                googleSignInBtn.style.display = 'block';
-                signOutBtnContainer.style.display = 'none';
-              })
-              .catch((error) => {
-                console.error('サインアウト失敗:', error);
-              });
-          });
         } else {
           userInfoDiv.style.display = 'none';
           googleSignInBtn.style.display = 'block';
@@ -291,19 +287,8 @@
     });
   </script>
 
-  <script type="module">
-    import { onAuthStateChanged } from './authStatus.js';
 
-    onAuthStateChanged(user => {
-      if (user) {
-        console.log('ログイン中:', user.displayName);
-        // ログイン済みのUI表示など
-      } else {
-        console.log('未ログイン');
-        // ログインボタン表示など
-      }
-    });
-  </script>
+
 
 </body>
 

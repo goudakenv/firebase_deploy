@@ -14,3 +14,5 @@ const auth = getAuth(app);
 export function onAuthStateChanged(callback) {
   auth.onAuthStateChanged(callback);
 }
+
+export { auth };
