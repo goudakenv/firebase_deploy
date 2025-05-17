@@ -40,6 +40,27 @@
     padding: 0;
 }
 
+#postsList {
+    list-style: none;
+    /* 箇条書きのマーカーを消す */
+    padding-left: 0;
+    /* 左の余白も消す（必要なら） */
+}
+
+
+#postsList li {
+    margin-bottom: 1em;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 0.5em;
+    text-align: center;
+}
+
+#postsList li strong {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+
 #sign-out-btn-container {
     display: block none;
     position: fixed !important;

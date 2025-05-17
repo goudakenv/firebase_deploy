@@ -6,27 +6,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>意見箱</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    h1 {
+      margin-top: 20px;
+    }
+  </style>
 
 </head>
 
 <body>
   <header>
     <div class="header-content">
-      <h1>同窓会</h1>
-      <nav class="nav-menu">
+      <h1>PARLEY</h1>
+      <!-- <nav class="nav-menu">
         <ul>
           <li><a href="/">意見箱</a></li>
           <li><a href="/board">掲示板</a></li>
+        </ul>
+      </nav> -->
+      <nav class="nav-menu">
+        <ul>
+          <li style="text-align:center;">
+            <a href="#" id="disabled-link">
+              他の機能は今後追加予定です<br>
+              しばらくお待ちください
+            </a>
+          </li>
         </ul>
       </nav>
     </div>
   </header>
 
+  <script>
+    document.getElementById('disabled-link').addEventListener('click', function (event) {
+      event.preventDefault();  // クリックのデフォルト動作（ページ遷移など）をキャンセル
+    });
+  </script>
+
   <!-- Googleサインインボタン -->
-  <div id="google-sign-in" class="google-sign-in-btn">
+  <button id="google-sign-in" class="google-sign-in-btn" type="button">
     <span>Googleで</span><br />
     <span>サインイン</span>
-  </div>
+  </button>
 
   <!-- ログイン情報 + サインアウト -->
   <div id="user-info"></div>
@@ -38,12 +59,101 @@
 
   <h2>掲示板</h2>
 
-  <form id="contactForm" class="horizontal-form">
-    <input type="text" id="whoToMeet" placeholder="話したい人" required />
-    <button type="button" id="post-btn">+</button>
-    <button type="submit">送信</button>
+  <form id="postForm">
+    <input type="text" id="titleInput" placeholder="タイトルを入力" required />
+    <textarea id="contentInput" placeholder="内容を入力" required></textarea>
+    <button type="submit">投稿</button>
   </form>
-  
+
+
+  <ul id="postsList"></ul>
+
+  <script>
+    const form = document.getElementById('postForm');
+    const titleInput = document.getElementById('titleInput');
+    const contentInput = document.getElementById('contentInput');
+    const postsList = document.getElementById('postsList');
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+
+      const title = titleInput.value.trim();
+      const content = contentInput.value.trim();
+      if (!title || !content) return;
+
+      const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+      posts.push({
+        title: title,
+        content: content,
+        date: new Date().toISOString()
+      });
+
+      localStorage.setItem('posts', JSON.stringify(posts));
+
+      loadPosts();
+
+      titleInput.value = '';
+      contentInput.value = '';
+    });
+
+
+    // 投稿をlocalStorageから読み込んで画面に表示
+    function loadPosts(isAdmin = false) {
+      const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+      postsList.innerHTML = '';
+
+      posts.slice().reverse().forEach((post, index) => {
+        const li = document.createElement('li');
+
+        const date = new Date(post.date);
+        const formattedDate = date.toLocaleString('ja-JP', {
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit'
+        });
+
+        li.innerHTML = `
+      <strong>${escapeHtml(post.title)}</strong><br />
+      ${escapeHtml(post.content).replace(/\n/g, '<br />')}<br />
+      <small style="color: gray;">${formattedDate}</small>
+    `;
+
+        if (isAdmin) {
+          const deleteBtn = document.createElement('button');
+          deleteBtn.textContent = '削除';
+          deleteBtn.style.marginLeft = '10px';
+          deleteBtn.addEventListener('click', () => {
+            posts.splice(posts.length - 1 - index, 1); // ←逆順表示に合わせて修正
+            localStorage.setItem('posts', JSON.stringify(posts));
+            loadPosts(true);
+          });
+          li.appendChild(deleteBtn);
+        }
+
+        postsList.appendChild(li);
+      });
+    }
+
+    // XSS対策で簡単にエスケープする関数（必須ではないけど推奨）
+    function escapeHtml(text) {
+      return text.replace(/[&<>"']/g, (match) => {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[match];
+      });
+    }
+    
+  </script>
+
+  <!-- <form id="contactForm">
+    <input type="text" id="whoToMeet" placeholder="話したい人" required /><br />
+    <div id="additionalFields"></div>
+    <button type="button" id="post-btn">+</button><br />
+    <button type="submit">送信</button>
+  </form> -->
 
   <!-- Firebase SDK -->
   <script type="module">
@@ -64,6 +174,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+    const adminEmail = "proper393@gmail.com"; // ← 管理者メールアドレス
 
     document.addEventListener("DOMContentLoaded", () => {
       const googleSignInBtn = document.getElementById('google-sign-in');
@@ -74,13 +185,25 @@
       googleSignInBtn.addEventListener('click', () => {
         const provider = new GoogleAuthProvider();
         signInWithPopup(auth, provider)
-          .then((result) => {
-            console.log('ログイン成功:', result.user);
+          .then(async (result) => {
+            const user = result.user;
+            console.log('ログイン成功:', user);
+
+            // Firestore にユーザー情報を保存
+            const userDocRef = doc(db, "users", user.uid);
+            await setDoc(userDocRef, {
+              displayName: user.displayName || null,
+              email: user.email || null,
+              photoURL: user.photoURL || null,
+              uid: user.uid,
+              loginTimestamp: new Date()
+            }, { merge: true });
           })
           .catch((error) => {
             console.error('ログイン失敗:', error);
           });
       });
+
 
       // サインアウトイベントはここで一度だけ登録
       signOutBtn.addEventListener('click', () => {
@@ -95,20 +218,37 @@
 
       auth.onAuthStateChanged((user) => {
         if (user) {
+          const isAdmin = user.email === adminEmail;
+
           userInfoDiv.innerHTML = `
-            <div id="user-info-container">
-              ログイン中: ${user.displayName}
-            </div>
-          `;
+      <div id="user-info-container">
+        ログイン中（${isAdmin ? "管理者" : "一般ユーザー"}）
+      </div>
+    `;
           userInfoDiv.style.display = 'block';
           googleSignInBtn.style.display = 'none';
           signOutBtnContainer.style.display = 'block';
+
+          // 管理者だけ投稿フォームと削除ボタン表示
+          document.getElementById('postForm').style.display = isAdmin ? 'block' : 'none';
+
+          // 削除ボタン表示も管理者だけに制御（loadPosts の引数に isAdmin を渡す）
+          loadPosts(isAdmin);
+
         } else {
           userInfoDiv.style.display = 'none';
           googleSignInBtn.style.display = 'block';
           signOutBtnContainer.style.display = 'none';
+
+          // ログアウト時は投稿フォーム非表示
+          document.getElementById('postForm').style.display = 'none';
+
+          // ゲストは削除不可
+          loadPosts(false);
         }
       });
+
+
 
       // フォーム送信処理
       document.getElementById('contactForm').addEventListener('submit', async (e) => {
@@ -126,12 +266,20 @@
         });
 
         try {
+          const user = auth.currentUser;
           const timestamp = new Date().toISOString();
           const docRef = doc(db, "names", timestamp);
+
           await setDoc(docRef, {
             whoToMeet: whoToMeet,
             additionalData: additionalData,
-            timestamp: new Date()
+            timestamp: new Date(),
+            user: user ? {
+              displayName: user.displayName || null,
+              email: user.email || null,
+              photoURL: user.photoURL || null,
+              uid: user.uid
+            } : null
           });
 
           alert("情報が送信されました！ ドキュメントID: " + timestamp);
