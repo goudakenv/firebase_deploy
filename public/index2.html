@@ -6,134 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>意見箱</title>
   <link rel="stylesheet" href="style.css" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      margin: 0;
-      padding: 0;
-    }
 
-    h1 {
-      text-align: center;
-      margin-top: 20px;
-    }
-
-    #message-board {
-      width: 80%;
-      margin: 20px auto;
-      background-color: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      display: none;
-    }
-
-    #message-board textarea {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 4px;
-      border: 1px solid #ddd;
-      margin-bottom: 10px;
-    }
-
-    #message-board button {
-      padding: 10px 20px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    #message-board button:hover {
-      background-color: #45a049;
-    }
-
-    #messages {
-      list-style-type: none;
-      padding: 0;
-      width: 80%;
-      margin: 20px auto;
-    }
-
-    #messages li {
-      background-color: #fff;
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 4px;
-      width: 100%;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-
-    #google-sign-in {
-      text-align: center;
-      margin-top: 20px;
-      cursor: pointer;
-    }
-
-    #user-info {
-      text-align: center;
-      margin-top: 20px;
-      display: none;
-    }
-
-    #user-info-container {
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
-      justify-content: center;
-    }
-
-    #sign-out-btn {
-      font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 3px;
-      cursor: pointer;
-      background-color: #f44336;
-      color: white;
-      border: none;
-      z-index: 10;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      margin-top: 10px;
-    }
-
-    #user-info button {
-      font-size: 12px;
-      padding: 4px 8px;
-      line-height: 1;
-      border-radius: 3px;
-      transition: transform 0.2s ease, background-color 0.2s ease;
-    }
-
-    #user-info button:hover {
-      transform: scale(0.9);
-    }
-
-    /* 追加: サインアウトボタンを常に表示 */
-    #user-info-container {
-      display: flex;
-      justify-content: center;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    #sign-out-btn-container {
-      text-align: center;
-      margin-top: 20px;
-    }
-
-    #sign-out-btn-container button {
-      font-size: 12px;
-      padding: 8px;
-      background-color: #f44336;
-      color: white;
-      border: none;
-      border-radius: 4px;
-    }
-  </style>
 </head>
 
 <body>
@@ -165,12 +38,12 @@
 
   <h2>掲示板</h2>
 
-  <form id="boardForm">
-    <input type="text" id="postTitle" name="postTitle" placeholder="タイトル" required /><br />
-    <textarea id="postContent" name="postContent" placeholder="投稿内容" rows="5" required></textarea><br />
-    <button type="submit">投稿する</button>
+  <form id="contactForm" class="horizontal-form">
+    <input type="text" id="whoToMeet" placeholder="話したい人" required />
+    <button type="button" id="post-btn">+</button>
+    <button type="submit">送信</button>
   </form>
-
+  
 
   <!-- Firebase SDK -->
   <script type="module">

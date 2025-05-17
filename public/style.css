@@ -41,8 +41,9 @@
 }
 
 body {
+    /* ヘッダーの高さ60px + top位置20px = 80px */
     font-family: 'Poppins', sans-serif;
-    background-color: #FFF9C4;
+    background-color: #FFFBCC; /* 淡いクリームイエロー */
     color: #3E2723;
     display: flex;
     flex-direction: column;
@@ -55,22 +56,18 @@ body {
 }
 
 h2 {
-    font-size: 2rem;
-    /* 大きめのフォントサイズ */
-    color: #FFB74D;
-    /* 明るいオレンジ */
-    text-align: center;
+    position: fixed;
+    top: 160px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 360px;
+    z-index: 1000;
+    padding: 10px 0;
     margin: 0;
-    /* 上下の余白を無くす */
-    padding: 20px 0;
-    /* 上下に余白を追加 */
-    text-transform: uppercase;
-    /* 英語を大文字に */
-    font-weight: bold;
-    letter-spacing: 2px;
-    /* 少し文字間隔を広げる */
-    margin-bottom: -30px;
-    /* 下の間隔を少し狭くする */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: center;
 }
 
 form {
@@ -90,17 +87,20 @@ form {
     ヘッダー
 -----------------------------------*/
 header {
+    position: fixed;
+    top: 20px;
     width: 100%;
     background-color: var(--primary);
     padding: var(--sp-sm);
     display: flex;
     justify-content: center;
     align-items: center;
-    border-radius: 8px;
+    border-radius: 12px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 header h1 {
+    margin-top: 20px;
     font-size: var(--fs-xl);
     color: var(--white);
     text-align: center;
@@ -263,6 +263,7 @@ button[type="submit"]:hover {
 @media (max-width: 600px) {
     header h1 {
         font-size: var(--fs-lg);
+        margin-top: 20px;
     }
 
     nav.nav-menu {
