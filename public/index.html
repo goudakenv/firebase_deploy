@@ -129,10 +129,10 @@
       auth.onAuthStateChanged((user) => {
         if (user) {
           userInfoDiv.innerHTML = `
-            <div id="user-info-container">
-              ログイン中: ${user.displayName}
-            </div>
-          `;
+      <div id="user-info-container">
+        ログイン中:
+      </div>
+    `; // ユーザー名は表示しない
           userInfoDiv.style.display = 'block';
           googleSignInBtn.style.display = 'none';
           signOutBtnContainer.style.display = 'block';
@@ -142,6 +142,7 @@
           signOutBtnContainer.style.display = 'none';
         }
       });
+
 
       // フォーム送信処理
       document.getElementById('contactForm').addEventListener('submit', async (e) => {
