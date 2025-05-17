@@ -126,10 +126,12 @@
           });
 
           li.innerHTML = `
-            <strong>${escapeHtml(post.title)}</strong><br />
-            ${escapeHtml(post.content).replace(/\n/g, "<br />")}<br />
-            <small style="color: gray;">${formattedDate}</small>
-          `;
+  <div class="post-section">
+    <strong class="post-title">${escapeHtml(post.title)}</strong><br />
+    <p class="post-content">${escapeHtml(post.content).replace(/\n/g, "<br />")}</p>
+    <small class="post-date" style="color: gray;">${formattedDate}</small>
+  </div>
+`;
 
           if (isAdminFlag) {
             const deleteBtn = document.createElement("button");
@@ -223,6 +225,14 @@
       }
     });
   </script>
+
+  <footer class="footer-github">
+    <p>📂 GitHubリポジトリ:
+      <a href="https://github.com/goudakenv/firebase_deploy" target="_blank" rel="noopener noreferrer">
+        https://github.com/goudakenv/firebase_deploy
+      </a>
+    </p>
+  </footer>
 </body>
 
 </html>
