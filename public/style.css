@@ -41,7 +41,7 @@
 }
 
 #sign-out-btn-container {
-    display: block !important;
+    display: block none;
     position: fixed !important;
     top: 10px !important;
     right: 10px !important;
