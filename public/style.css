@@ -80,9 +80,12 @@
 
 /* 内容 */
 #postsList li .post-content {
-    background-color: #b2f0e6;  /* 背景：パステルミント */
-    color: #004d40;             /* 濃いグリーン寄りの文字色 */
-    font-weight: 700; /* 太字（bold相当） */
+    background-color: #b2f0e6;
+    /* 背景：パステルミント */
+    color: #004d40;
+    /* 濃いグリーン寄りの文字色 */
+    font-weight: 700;
+    /* 太字（bold相当） */
     margin-top: -24px;
     margin-bottom: 12px;
     white-space: pre-wrap;
@@ -128,20 +131,20 @@
 
 
 body {
-    /* ヘッダーの高さ60px + top位置20px = 80px */
+    /* 上下左右のpaddingを個別指定 */
+    padding: 0 var(--sp-lg) 60px var(--sp-lg);
+
+    /* 他のスタイルはそのまま */
     font-family: 'Poppins', sans-serif;
     background-color: #FFFBCC;
-    /* 淡いクリームイエロー */
     color: #3E2723;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    /* 画面全体の高さ */
-    padding: 0 var(--sp-lg);
-    /* 横の余白 */
 }
+
 
 h2 {
     margin-top: 50px;
