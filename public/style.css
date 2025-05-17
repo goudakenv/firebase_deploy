@@ -45,7 +45,7 @@
     position: fixed !important;
     top: 10px !important;
     right: 10px !important;
-    background-color: yellow !important;
+    background-color: transparent !important;
     z-index: 9999 !important;
 }
 
