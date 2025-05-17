@@ -14,6 +14,14 @@
 
 ---
 
+## 🆕 新機能
+
+- **掲示板機能追加**  
+  - 管理者ユーザーのみ投稿可能  
+  - 一般ユーザーは閲覧のみ可能
+
+---
+
 ## 📌 今後の開発予定
 
 - 💬 **掲示板機能**：ログインユーザーが投稿・閲覧・コメントできるシステム
@@ -31,5 +39,11 @@
 - **Cloud Firestore**：NoSQL データベース
 - **HTML / CSS / JavaScript**：フロントエンド
 - **GitHub Actions**：CI/CD による自動デプロイ
+
+---
+
+## 🌐 公開URL
+
+- [https://loginconnect-b3963.web.app/](https://loginconnect-b3963.web.app/)
 
 ---
