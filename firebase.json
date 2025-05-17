@@ -7,7 +7,7 @@
       "**/node_modules/**"
     ],
     "rewrites": [
-      { "source": "/opinions", "destination": "/index.html" },
+      { "source": "/", "destination": "/index.html" },
       { "source": "/board", "destination": "/index2.html" }
     ]
   },
