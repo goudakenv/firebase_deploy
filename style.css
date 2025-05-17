@@ -1,0 +1,290 @@
+/*-----------------------------------
+  ベース設定
+-----------------------------------*/
+:root {
+    /* カラーパレット */
+    --primary: #FFB74D;
+    /* 明るいオレンジ */
+    --primary-dark: #FB8C00;
+    /* 濃いオレンジ */
+    --accent: #81C784;
+    /* 優しいグリーン */
+    --accent-dark: #388E3C;
+    /* 濃いグリーン */
+    --bg: #FFF9C4;
+    /* 明るいイエロー */
+    --fg: #3E2723;
+    /* ダークブラウン */
+    --white: #fff;
+    --border: #F1F8E9;
+    /* 明るい緑 */
+    /* スペーシング */
+    --sp-xs: 4px;
+    --sp-sm: 8px;
+    --sp-md: 16px;
+    --sp-lg: 24px;
+    /* フォントサイズ */
+    --fs-base: 1rem;
+    --fs-lg: 1.125rem;
+    --fs-xl: 1.5rem;
+    /* フォント */
+    --font-base: 'Poppins', sans-serif;
+}
+
+/*-----------------------------------
+    ベーススタイル
+-----------------------------------*/
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #FFF9C4;
+    color: #3E2723;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    /* 画面全体の高さ */
+    padding: 0 var(--sp-lg);
+    /* 横の余白 */
+}
+
+h2 {
+    font-size: 2rem;
+    /* 大きめのフォントサイズ */
+    color: #FFB74D;
+    /* 明るいオレンジ */
+    text-align: center;
+    margin: 0;
+    /* 上下の余白を無くす */
+    padding: 20px 0;
+    /* 上下に余白を追加 */
+    text-transform: uppercase;
+    /* 英語を大文字に */
+    font-weight: bold;
+    letter-spacing: 2px;
+    /* 少し文字間隔を広げる */
+    margin-bottom: -30px;
+    /* 下の間隔を少し狭くする */
+}
+
+form {
+    background-color: var(--white);
+    padding: var(--sp-lg);
+    margin: var(--sp-lg) 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-md);
+}
+
+/*-----------------------------------
+    ヘッダー
+-----------------------------------*/
+header {
+    width: 100%;
+    background-color: var(--primary);
+    padding: var(--sp-sm);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+    font-size: var(--fs-xl);
+    color: var(--white);
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+/*-----------------------------------
+    ナビゲーションメニュー
+-----------------------------------*/
+nav.nav-menu {
+    width: 100%;
+    background-color: var(--primary-dark);
+    padding: var(--sp-sm) var(--sp-md);
+    border-radius: 8px;
+    margin-top: var(--sp-lg);
+}
+
+nav.nav-menu ul {
+    display: flex;
+    justify-content: center;
+    gap: var(--sp-lg);
+    list-style: none;
+}
+
+nav.nav-menu li a {
+    color: var(--white);
+    text-decoration: none;
+    font-weight: bold;
+    font-size: var(--fs-base);
+    padding: var(--sp-xs) var(--sp-sm);
+    border-radius: 4px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+nav.nav-menu li a:hover {
+    background-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+/*-----------------------------------
+    フォームまわり
+-----------------------------------*/
+form {
+    background-color: var(--white);
+    padding: var(--sp-lg);
+    margin-top: var(--sp-lg);
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-md);
+    transition: transform 0.2s ease;
+}
+
+form:hover {
+    transform: scale(1.05);
+}
+
+input,
+textarea {
+    width: 100%;
+    padding: var(--sp-sm);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: var(--fs-base);
+    font-family: var(--font-base);
+    transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+input:focus,
+textarea:focus {
+    border-color: var(--accent);
+    outline: none;
+    box-shadow: 0 0 8px var(--accent);
+}
+
+/*-----------------------------------
+    ボタン
+-----------------------------------*/
+button {
+    font-size: var(--fs-base);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: var(--sp-sm) var(--sp-md);
+    transition: transform 0.2s ease, background-color 0.3s ease;
+}
+
+#post-btn {
+    background-color: var(--accent);
+    color: var(--white);
+}
+
+#post-btn:hover {
+    background-color: var(--accent-dark);
+    transform: translateY(-3px);
+}
+
+button[type="submit"] {
+    background-color: var(--primary);
+    color: var(--white);
+}
+
+button[type="submit"]:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-3px);
+}
+
+/*-----------------------------------
+    Googleサインイン & ユーザー情報
+-----------------------------------*/
+#google-sign-in {
+    position: fixed;
+    top: var(--sp-lg);
+    right: var(--sp-lg);
+    background-color: var(--accent);
+    color: var(--white);
+    padding: var(--sp-sm) var(--sp-md);
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: var(--fs-base);
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    z-index: 999;
+}
+
+#google-sign-in:hover {
+    background-color: var(--accent-dark);
+    transform: translateY(-3px);
+}
+
+/* #google-sign-in.hidden {
+    visibility: hidden;
+    pointer-events: none;
+    opacity: 0;
+} */
+
+#user-info {
+    position: fixed;
+    top: var(--sp-lg);
+    left: var(--sp-lg);
+    background-color: rgba(238, 238, 238, 0.8);
+    color: var(--fg);
+    padding: var(--sp-xs) var(--sp-sm);
+    border-radius: 8px;
+    font-size: 0.75rem;
+    z-index: 998;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/*-----------------------------------
+    レスポンシブ
+-----------------------------------*/
+@media (max-width: 600px) {
+    header h1 {
+        font-size: var(--fs-lg);
+    }
+
+    nav.nav-menu {
+        padding: var(--sp-xs) var(--sp-sm);
+    }
+
+    #google-sign-in {
+        top: var(--sp-sm);
+        right: var(--sp-sm);
+        font-size: 0.75rem;
+        padding: var(--sp-xs) var(--sp-sm);
+    }
+
+    #user-info {
+        top: var(--sp-sm);
+        left: var(--sp-sm);
+        font-size: 0.65rem;
+        max-width: 100px;
+    }
+
+    form {
+        max-width: 100%;
+        margin-top: var(--sp-md);
+    }
+}
