@@ -70,29 +70,68 @@
     #google-sign-in {
       text-align: center;
       margin-top: 20px;
+      cursor: pointer;
+    }
+
+    #user-info {
+      text-align: center;
+      margin-top: 20px;
+      display: none;
+    }
+
+    #user-info-container {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      justify-content: center;
     }
 
     #sign-out-btn {
-      display: none;
-      text-align: center;
-      margin: 10px auto;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      margin-top: 10px;
     }
 
-    #sign-out-btn button {
-      padding: 8px 16px;
+    #user-info button {
+      font-size: 12px;
+      padding: 4px 8px;
+      line-height: 1;
+      border-radius: 3px;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    #user-info button:hover {
+      transform: scale(0.9);
+    }
+
+    /* 追加: サインアウトボタンを常に表示 */
+    #user-info-container {
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #sign-out-btn-container {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    #sign-out-btn-container button {
+      font-size: 12px;
+      padding: 8px;
       background-color: #f44336;
       color: white;
       border: none;
       border-radius: 4px;
-      cursor: pointer;
-    }
-
-    #sign-out-btn button:hover {
-      background-color: #d32f2f;
-    }
-
-    .hidden {
-      display: none;
     }
   </style>
 </head>
@@ -100,7 +139,7 @@
 <body>
   <header>
     <div class="header-content">
-      <h1 style="text-align: center;">同窓会</h1>
+      <h1>同窓会</h1>
       <nav class="nav-menu">
         <ul>
           <li><a href="index.html">意見箱</a></li>
@@ -110,37 +149,34 @@
     </div>
   </header>
 
-  <div id="google-sign-in" class="google-sign-in-btn hidden">
+  <!-- Googleサインインボタン -->
+  <div id="google-sign-in" class="google-sign-in-btn">
     <span>Googleで</span><br />
     <span>サインイン</span>
   </div>
 
-  <div id="user-info" style="display: none;">ログイン中</div>
+  <!-- ログイン情報 + サインアウト -->
+  <div id="user-info"></div>
 
-  <!-- サインアウトボタン -->
-  <div id="sign-out-btn">
-    <button onclick="signOutUser()">サインアウト</button>
+  <!-- サインアウトボタン表示場所 -->
+  <div id="sign-out-btn-container" style="display:none;">
+    <button id="sign-out-btn">サインアウト</button>
   </div>
 
-  <h2>掲示板</h2>
+  <h2>意見箱</h2>
 
-  <div id="message-board">
-    <textarea id="message-input" placeholder="メッセージを入力..."></textarea><br>
-    <button onclick="postMessage()">投稿</button>
-  </div>
-
-  <ul id="messages"></ul>
+  <form id="contactForm">
+    <input type="text" id="whoToMeet" placeholder="話したい人" required /><br />
+    <div id="additionalFields"></div>
+    <button type="button" id="post-btn">+</button><br />
+    <button type="submit">送信</button>
+  </form>
 
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import {
-      getAuth,
-      GoogleAuthProvider,
-      signInWithPopup,
-      signOut,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyB3QzOBknuvpVy1rcl9o2PJIsKjzcH6-Ko",
@@ -153,60 +189,106 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
     const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
 
-    const userInfoDiv = document.getElementById("user-info");
-    const signInBtn = document.getElementById("google-sign-in");
-    const messageBoard = document.getElementById("message-board");
-    const signOutBtn = document.getElementById("sign-out-btn");
+    document.addEventListener("DOMContentLoaded", () => {
+      const googleSignInBtn = document.getElementById('google-sign-in');
+      const userInfoDiv = document.getElementById('user-info');
+      const signOutBtnContainer = document.getElementById('sign-out-btn-container');
+      const signOutBtn = document.getElementById('sign-out-btn');
 
-    signInBtn.addEventListener("click", () => {
-      signInWithPopup(auth, provider)
-        .then((result) => {
-          console.log("ログイン成功:", result.user);
-        })
-        .catch((error) => {
-          console.error("ログイン失敗:", error);
+      googleSignInBtn.addEventListener('click', () => {
+        const provider = new GoogleAuthProvider();
+        signInWithPopup(auth, provider)
+          .then((result) => {
+            console.log('ログイン成功:', result.user);
+          })
+          .catch((error) => {
+            console.error('ログイン失敗:', error);
+          });
+      });
+
+      // サインアウトイベントはここで一度だけ登録
+      signOutBtn.addEventListener('click', () => {
+        signOut(auth)
+          .then(() => {
+            // サインアウト後のUI処理は onAuthStateChanged の中で行うのでここでは不要
+          })
+          .catch((error) => {
+            console.error('サインアウト失敗:', error);
+          });
+      });
+
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          userInfoDiv.innerHTML = `
+            <div id="user-info-container">
+              ログイン中: ${user.displayName}
+            </div>
+          `;
+          userInfoDiv.style.display = 'block';
+          googleSignInBtn.style.display = 'none';
+          signOutBtnContainer.style.display = 'block';
+        } else {
+          userInfoDiv.style.display = 'none';
+          googleSignInBtn.style.display = 'block';
+          signOutBtnContainer.style.display = 'none';
+        }
+      });
+
+      // フォーム送信処理
+      document.getElementById('contactForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const whoToMeet = document.getElementById('whoToMeet').value;
+
+        const additionalFields = document.querySelectorAll('.additional-input');
+        const additionalData = [];
+        additionalFields.forEach(field => {
+          const title = field.querySelector('.additional-title').value;
+          const content = field.querySelector('.additional-content').value;
+          if (title && content) {
+            additionalData.push({ title, content });
+          }
         });
-    });
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        userInfoDiv.innerText = `ログイン中: ${user.displayName}`;
-        userInfoDiv.style.display = "block";
-        messageBoard.style.display = "block";
-        signInBtn.style.display = "none";
-        signOutBtn.style.display = "block";
-      } else {
-        userInfoDiv.style.display = "none";
-        messageBoard.style.display = "none";
-        signInBtn.style.display = "block";
-        signOutBtn.style.display = "none";
-      }
-    });
+        try {
+          const timestamp = new Date().toISOString();
+          const docRef = doc(db, "names", timestamp);
+          await setDoc(docRef, {
+            whoToMeet: whoToMeet,
+            additionalData: additionalData,
+            timestamp: new Date()
+          });
 
-    window.signOutUser = function () {
-      signOut(auth)
-        .then(() => {
-          console.log("サインアウト成功");
-        })
-        .catch((error) => {
-          console.error("サインアウト失敗:", error);
+          alert("情報が送信されました！ ドキュメントID: " + timestamp);
+          document.getElementById('contactForm').reset();
+          document.getElementById('additionalFields').innerHTML = '';
+        } catch (error) {
+          alert("送信エラー：" + error);
+        }
+      });
+
+      // 追加入力フィールドの処理
+      document.getElementById('post-btn').addEventListener('click', () => {
+        const newField = document.createElement('div');
+        newField.classList.add('additional-input');
+        newField.innerHTML = `
+          <input type="text" placeholder="項目のタイトル" class="additional-title" required>
+          <textarea placeholder="内容を入力" class="additional-content" required></textarea>
+          <button type="button" class="remove-btn">削除</button>
+        `;
+        document.getElementById('additionalFields').appendChild(newField);
+
+        newField.querySelector('.remove-btn').addEventListener('click', () => {
+          newField.remove();
         });
-    };
-
-    window.postMessage = function () {
-      const input = document.getElementById("message-input");
-      const text = input.value.trim();
-      if (text) {
-        const li = document.createElement("li");
-        li.textContent = text;
-        document.getElementById("messages").appendChild(li);
-        input.value = "";
-      }
-    };
+      });
+    });
   </script>
+
+
+
 
 </body>
 
