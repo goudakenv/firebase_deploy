@@ -40,10 +40,27 @@
     padding: 0;
 }
 
+#sign-out-btn-container {
+    display: block !important;
+    position: fixed !important;
+    top: 10px !important;
+    right: 10px !important;
+    background-color: yellow !important;
+    z-index: 9999 !important;
+}
+
+#sign-out-btn {
+    display: inline-block !important;
+    pointer-events: auto !important;
+}
+
+
+
 body {
     /* ヘッダーの高さ60px + top位置20px = 80px */
     font-family: 'Poppins', sans-serif;
-    background-color: #FFFBCC; /* 淡いクリームイエロー */
+    background-color: #FFFBCC;
+    /* 淡いクリームイエロー */
     color: #3E2723;
     display: flex;
     flex-direction: column;
