@@ -81,23 +81,28 @@
 /* 内容 */
 #postsList li .post-content {
     background-color: #b2f0e6;
-    /* 背景：パステルミント */
     color: #004d40;
-    /* 濃いグリーン寄りの文字色 */
     font-weight: 700;
-    /* 太字（bold相当） */
     margin-top: -24px;
     margin-bottom: 12px;
     white-space: pre-wrap;
+    word-wrap: break-word;
+    /* 追加 */
+    overflow-wrap: break-word;
+    /* 追加 */
     padding: 8px 12px;
     border-radius: 6px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     display: block;
     text-align: center;
-    width: fit-content;
     margin-left: auto;
     margin-right: auto;
+
+    /* width: fit-content; ←これを削除 or コメントアウト */
+    max-width: 100%;
+    /* 追加 */
 }
+
 
 /* 投稿日時 */
 #postsList li .post-date {
@@ -343,25 +348,25 @@ button[type="submit"]:hover {
     bottom: 0;
     left: 0;
     width: 100%;
-    background-color: #4a4a4a;
-    color: var(--white);
+    /* background-color: #4a4a4a; */
+    /* color: var(--white); */
     text-align: center;
     padding: var(--sp-lg);
     font-size: var(--fs-base);
-    border-top: 1px solid #666;
+    /* border-top: 1px solid #666; */
     z-index: 1000;
 }
 
 
 .footer-github a {
-    color: var(--white);
+    /* color: var(--white); */
     text-decoration: none;
     word-break: break-all;
     transition: all 0.3s ease;
 }
 
 .footer-github a:hover {
-    color: var(--white);
+    color: var(--accent-dark);
     background-color: rgba(255, 255, 255, 0.15);
     text-shadow: 0 3px 8px rgba(255, 255, 255, 0.5);
     transform: translateY(-4px) scale(1.05);
