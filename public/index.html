@@ -27,7 +27,7 @@
       <nav class="nav-menu">
         <ul>
           <li style="text-align:center;">
-            <a href="#">
+            <a href="#" id="disabled-link">
               他の機能は今後追加予定です<br>
               しばらくお待ちください
             </a>
@@ -36,6 +36,12 @@
       </nav>
     </div>
   </header>
+
+  <script>
+    document.getElementById('disabled-link').addEventListener('click', function (event) {
+      event.preventDefault();  // クリックのデフォルト動作（ページ遷移など）をキャンセル
+    });
+  </script>
 
   <!-- Googleサインインボタン -->
   <button id="google-sign-in" class="google-sign-in-btn" type="button">
