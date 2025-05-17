@@ -4,14 +4,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>意見箱</title>
+  <title>掲示板</title>
   <link rel="stylesheet" href="style.css" />
-  <style>
-    h1 {
-      margin-top: 20px;
-    }
-  </style>
-
 </head>
 
 <body>
@@ -24,24 +18,8 @@
           <li><a href="/board">掲示板</a></li>
         </ul>
       </nav>
-      <!-- <nav class="nav-menu">
-        <ul>
-          <li style="text-align:center;">
-            <a href="#" id="disabled-link">
-              他の機能は今後追加予定です<br>
-              しばらくお待ちください
-            </a>
-          </li>
-        </ul>
-      </nav> -->
     </div>
   </header>
-
-  <script>
-    document.getElementById('disabled-link').addEventListener('click', function (event) {
-      event.preventDefault();  // クリックのデフォルト動作（ページ遷移など）をキャンセル
-    });
-  </script>
 
   <!-- Googleサインインボタン -->
   <button id="google-sign-in" class="google-sign-in-btn" type="button">
@@ -59,12 +37,11 @@
 
   <h2>掲示板</h2>
 
-  <form id="postForm">
+  <form id="postForm" style="display:none;">
     <input type="text" id="titleInput" placeholder="タイトルを入力" required />
     <textarea id="contentInput" placeholder="内容を入力" required></textarea>
     <button type="submit">投稿</button>
   </form>
-
 
   <ul id="postsList"></ul>
 
@@ -90,12 +67,11 @@
 
       localStorage.setItem('posts', JSON.stringify(posts));
 
-      loadPosts();
+      loadPosts(true);
 
       titleInput.value = '';
       contentInput.value = '';
     });
-
 
     // 投稿をlocalStorageから読み込んで画面に表示
     function loadPosts(isAdmin = false) {
@@ -112,17 +88,17 @@
         });
 
         li.innerHTML = `
-      <strong>${escapeHtml(post.title)}</strong><br />
-      ${escapeHtml(post.content).replace(/\n/g, '<br />')}<br />
-      <small style="color: gray;">${formattedDate}</small>
-    `;
+          <strong>${escapeHtml(post.title)}</strong><br />
+          ${escapeHtml(post.content).replace(/\n/g, '<br />')}<br />
+          <small style="color: gray;">${formattedDate}</small>
+        `;
 
         if (isAdmin) {
           const deleteBtn = document.createElement('button');
           deleteBtn.textContent = '削除';
           deleteBtn.style.marginLeft = '10px';
           deleteBtn.addEventListener('click', () => {
-            posts.splice(posts.length - 1 - index, 1); // ←逆順表示に合わせて修正
+            posts.splice(posts.length - 1 - index, 1);
             localStorage.setItem('posts', JSON.stringify(posts));
             loadPosts(true);
           });
@@ -133,7 +109,7 @@
       });
     }
 
-    // XSS対策で簡単にエスケープする関数（必須ではないけど推奨）
+    // XSS対策（簡易版）
     function escapeHtml(text) {
       return text.replace(/[&<>"']/g, (match) => {
         return {
@@ -145,15 +121,7 @@
         }[match];
       });
     }
-
   </script>
-
-  <!-- <form id="contactForm">
-    <input type="text" id="whoToMeet" placeholder="話したい人" required /><br />
-    <div id="additionalFields"></div>
-    <button type="button" id="post-btn">+</button><br />
-    <button type="submit">送信</button>
-  </form> -->
 
   <!-- Firebase SDK -->
   <script type="module">
@@ -174,7 +142,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-    const adminEmail = "proper393@gmail.com"; // ← 管理者メールアドレス
+    const adminEmail = "proper393@gmail.com"; // 管理者メール
 
     document.addEventListener("DOMContentLoaded", () => {
       const googleSignInBtn = document.getElementById('google-sign-in');
@@ -204,13 +172,8 @@
           });
       });
 
-
-      // サインアウトイベントはここで一度だけ登録
       signOutBtn.addEventListener('click', () => {
         signOut(auth)
-          .then(() => {
-            // サインアウト後のUI処理は onAuthStateChanged の中で行うのでここでは不要
-          })
           .catch((error) => {
             console.error('サインアウト失敗:', error);
           });
@@ -221,18 +184,18 @@
           const isAdmin = user.email === adminEmail;
 
           userInfoDiv.innerHTML = `
-      <div id="user-info-container">
-        ログイン中（${isAdmin ? "管理者" : "一般ユーザー"}）
-      </div>
-    `;
+            <div id="user-info-container">
+              ログイン中（${isAdmin ? "管理者" : "一般ユーザー"}）
+            </div>
+          `;
           userInfoDiv.style.display = 'block';
           googleSignInBtn.style.display = 'none';
           signOutBtnContainer.style.display = 'block';
 
-          // 管理者だけ投稿フォームと削除ボタン表示
-          document.getElementById('postForm').style.display = isAdmin ? 'block' : 'none';
+          // 管理者だけ投稿フォーム表示
+          form.style.display = isAdmin ? 'block' : 'none';
 
-          // 削除ボタン表示も管理者だけに制御（loadPosts の引数に isAdmin を渡す）
+          // 投稿一覧読み込み（削除ボタンも管理者だけ）
           loadPosts(isAdmin);
 
         } else {
@@ -240,76 +203,13 @@
           googleSignInBtn.style.display = 'block';
           signOutBtnContainer.style.display = 'none';
 
-          // ログアウト時は投稿フォーム非表示
-          document.getElementById('postForm').style.display = 'none';
+          form.style.display = 'none';
 
-          // ゲストは削除不可
           loadPosts(false);
         }
       });
-
-
-
-      // フォーム送信処理
-      document.getElementById('contactForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const whoToMeet = document.getElementById('whoToMeet').value;
-
-        const additionalFields = document.querySelectorAll('.additional-input');
-        const additionalData = [];
-        additionalFields.forEach(field => {
-          const title = field.querySelector('.additional-title').value;
-          const content = field.querySelector('.additional-content').value;
-          if (title && content) {
-            additionalData.push({ title, content });
-          }
-        });
-
-        try {
-          const user = auth.currentUser;
-          const timestamp = new Date().toISOString();
-          const docRef = doc(db, "names", timestamp);
-
-          await setDoc(docRef, {
-            whoToMeet: whoToMeet,
-            additionalData: additionalData,
-            timestamp: new Date(),
-            user: user ? {
-              displayName: user.displayName || null,
-              email: user.email || null,
-              photoURL: user.photoURL || null,
-              uid: user.uid
-            } : null
-          });
-
-          alert("情報が送信されました！ ドキュメントID: " + timestamp);
-          document.getElementById('contactForm').reset();
-          document.getElementById('additionalFields').innerHTML = '';
-        } catch (error) {
-          alert("送信エラー：" + error);
-        }
-      });
-
-      // 追加入力フィールドの処理
-      document.getElementById('post-btn').addEventListener('click', () => {
-        const newField = document.createElement('div');
-        newField.classList.add('additional-input');
-        newField.innerHTML = `
-          <input type="text" placeholder="項目のタイトル" class="additional-title" required>
-          <textarea placeholder="内容を入力" class="additional-content" required></textarea>
-          <button type="button" class="remove-btn">削除</button>
-        `;
-        document.getElementById('additionalFields').appendChild(newField);
-
-        newField.querySelector('.remove-btn').addEventListener('click', () => {
-          newField.remove();
-        });
-      });
     });
   </script>
-
-
-
 
 </body>
 
