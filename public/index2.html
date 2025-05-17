@@ -45,69 +45,84 @@
 
   <ul id="postsList"></ul>
 
-  <script>
+  <script type="module">
+    import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+
     const form = document.getElementById('postForm');
     const titleInput = document.getElementById('titleInput');
     const contentInput = document.getElementById('contentInput');
     const postsList = document.getElementById('postsList');
 
-    form.addEventListener('submit', e => {
+    let isAdmin = false;  // 管理者フラグを外で保持
+
+    // Firestoreから投稿を取得して表示
+    async function loadPosts(isAdmin = false) {
+      postsList.innerHTML = '';
+
+      try {
+        const postsCol = collection(db, "posts");
+        const q = query(postsCol, orderBy("date", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        querySnapshot.forEach(docSnap => {
+          const post = docSnap.data();
+          const li = document.createElement('li');
+
+          const date = new Date(post.date);
+          const formattedDate = date.toLocaleString('ja-JP', {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit'
+          });
+
+          li.innerHTML = `
+            <strong>${escapeHtml(post.title)}</strong><br />
+            ${escapeHtml(post.content).replace(/\n/g, '<br />')}<br />
+            <small style="color: gray;">${formattedDate}</small>
+          `;
+
+          if (isAdmin) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = '削除';
+            deleteBtn.style.marginLeft = '10px';
+            deleteBtn.addEventListener('click', async () => {
+              await deleteDoc(doc(db, "posts", docSnap.id));
+              loadPosts(isAdmin);
+            });
+            li.appendChild(deleteBtn);
+          }
+
+          postsList.appendChild(li);
+        });
+      } catch (error) {
+        console.error("投稿の取得に失敗:", error);
+      }
+    }
+
+    form.addEventListener('submit', async e => {
       e.preventDefault();
 
       const title = titleInput.value.trim();
       const content = contentInput.value.trim();
       if (!title || !content) return;
 
-      const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-      posts.push({
-        title: title,
-        content: content,
-        date: new Date().toISOString()
-      });
-
-      localStorage.setItem('posts', JSON.stringify(posts));
-
-      loadPosts(true);
-
-      titleInput.value = '';
-      contentInput.value = '';
-    });
-
-    // 投稿をlocalStorageから読み込んで画面に表示
-    function loadPosts(isAdmin = false) {
-      const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-      postsList.innerHTML = '';
-
-      posts.slice().reverse().forEach((post, index) => {
-        const li = document.createElement('li');
-
-        const date = new Date(post.date);
-        const formattedDate = date.toLocaleString('ja-JP', {
-          year: 'numeric', month: '2-digit', day: '2-digit',
-          hour: '2-digit', minute: '2-digit'
+      try {
+        await addDoc(collection(db, "posts"), {
+          title,
+          content,
+          date: new Date().toISOString()
         });
 
-        li.innerHTML = `
-          <strong>${escapeHtml(post.title)}</strong><br />
-          ${escapeHtml(post.content).replace(/\n/g, '<br />')}<br />
-          <small style="color: gray;">${formattedDate}</small>
-        `;
+        titleInput.value = '';
+        contentInput.value = '';
 
-        if (isAdmin) {
-          const deleteBtn = document.createElement('button');
-          deleteBtn.textContent = '削除';
-          deleteBtn.style.marginLeft = '10px';
-          deleteBtn.addEventListener('click', () => {
-            posts.splice(posts.length - 1 - index, 1);
-            localStorage.setItem('posts', JSON.stringify(posts));
-            loadPosts(true);
-          });
-          li.appendChild(deleteBtn);
-        }
+        loadPosts(isAdmin);
 
-        postsList.appendChild(li);
-      });
-    }
+      } catch (error) {
+        console.error('投稿の保存に失敗:', error);
+        alert('投稿の保存に失敗しました。');
+      }
+    });
 
     // XSS対策（簡易版）
     function escapeHtml(text) {
@@ -121,95 +136,171 @@
         }[match];
       });
     }
+
+    // 認証状態変化でisAdminをセットして投稿読み込み
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    const auth = getAuth();
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        isAdmin = user.email === "proper393@gmail.com"; // 管理者メール判定
+        form.style.display = isAdmin ? 'block' : 'none';
+        loadPosts(isAdmin);
+      } else {
+        isAdmin = false;
+        form.style.display = 'none';
+        loadPosts(false);
+      }
+    });
   </script>
+
 
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyB3QzOBknuvpVy1rcl9o2PJIsKjzcH6-Ko",
-      authDomain: "loginconnect-b3963.firebaseapp.com",
-      projectId: "loginconnect-b3963",
-      storageBucket: "loginconnect-b3963.appspot.com",
-      messagingSenderId: "362875108198",
-      appId: "1:362875108198:web:e94198275cbb42d6aca6a7",
-      measurementId: "G-THFPS2MKYJ"
-    };
+    const firebaseConfig = { /* 省略 */ };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-    const adminEmail = "proper393@gmail.com"; // 管理者メール
+    const adminEmail = "proper393@gmail.com";
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const googleSignInBtn = document.getElementById('google-sign-in');
-      const userInfoDiv = document.getElementById('user-info');
-      const signOutBtnContainer = document.getElementById('sign-out-btn-container');
-      const signOutBtn = document.getElementById('sign-out-btn');
+    const form = document.getElementById('postForm');
+    const titleInput = document.getElementById('titleInput');
+    const contentInput = document.getElementById('contentInput');
+    const postsList = document.getElementById('postsList');
+    const googleSignInBtn = document.getElementById('google-sign-in');
+    const userInfoDiv = document.getElementById('user-info');
+    const signOutBtnContainer = document.getElementById('sign-out-btn-container');
+    const signOutBtn = document.getElementById('sign-out-btn');
 
-      googleSignInBtn.addEventListener('click', () => {
-        const provider = new GoogleAuthProvider();
-        signInWithPopup(auth, provider)
-          .then(async (result) => {
-            const user = result.user;
-            console.log('ログイン成功:', user);
+    let isAdmin = false;
 
-            // Firestore にユーザー情報を保存
-            const userDocRef = doc(db, "users", user.uid);
-            await setDoc(userDocRef, {
-              displayName: user.displayName || null,
-              email: user.email || null,
-              photoURL: user.photoURL || null,
-              uid: user.uid,
-              loginTimestamp: new Date()
-            }, { merge: true });
-          })
-          .catch((error) => {
-            console.error('ログイン失敗:', error);
-          });
+    function escapeHtml(text) {
+      return text.replace(/[&<>"']/g, (match) => {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[match];
       });
+    }
 
-      signOutBtn.addEventListener('click', () => {
-        signOut(auth)
-          .catch((error) => {
-            console.error('サインアウト失敗:', error);
+    async function loadPosts(isAdmin = false) {
+      postsList.innerHTML = '';
+      try {
+        const postsCol = collection(db, "posts");
+        const q = query(postsCol, orderBy("date", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        querySnapshot.forEach(docSnap => {
+          const post = docSnap.data();
+          const li = document.createElement('li');
+
+          const date = new Date(post.date);
+          const formattedDate = date.toLocaleString('ja-JP', {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit'
           });
-      });
 
-      auth.onAuthStateChanged((user) => {
-        if (user) {
-          const isAdmin = user.email === adminEmail;
-
-          userInfoDiv.innerHTML = `
-            <div id="user-info-container">
-              ログイン中（${isAdmin ? "管理者" : "一般ユーザー"}）
-            </div>
+          li.innerHTML = `
+            <strong>${escapeHtml(post.title)}</strong><br />
+            ${escapeHtml(post.content).replace(/\n/g, '<br />')}<br />
+            <small style="color: gray;">${formattedDate}</small>
           `;
-          userInfoDiv.style.display = 'block';
-          googleSignInBtn.style.display = 'none';
-          signOutBtnContainer.style.display = 'block';
 
-          // 管理者だけ投稿フォーム表示
-          form.style.display = isAdmin ? 'block' : 'none';
+          if (isAdmin) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = '削除';
+            deleteBtn.style.marginLeft = '10px';
+            deleteBtn.addEventListener('click', async () => {
+              await deleteDoc(doc(db, "posts", docSnap.id));
+              loadPosts(isAdmin);
+            });
+            li.appendChild(deleteBtn);
+          }
+          postsList.appendChild(li);
+        });
+      } catch (error) {
+        console.error("投稿の取得に失敗:", error);
+      }
+    }
 
-          // 投稿一覧読み込み（削除ボタンも管理者だけ）
-          loadPosts(isAdmin);
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
 
-        } else {
-          userInfoDiv.style.display = 'none';
-          googleSignInBtn.style.display = 'block';
-          signOutBtnContainer.style.display = 'none';
+      const title = titleInput.value.trim();
+      const content = contentInput.value.trim();
+      if (!title || !content) return;
 
-          form.style.display = 'none';
+      try {
+        await addDoc(collection(db, "posts"), {
+          title,
+          content,
+          date: new Date().toISOString()
+        });
+        titleInput.value = '';
+        contentInput.value = '';
+        loadPosts(isAdmin);
+      } catch (error) {
+        console.error('投稿の保存に失敗:', error);
+        alert('投稿の保存に失敗しました。');
+      }
+    });
 
-          loadPosts(false);
-        }
+    googleSignInBtn.addEventListener('click', () => {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider)
+        .then(async (result) => {
+          const user = result.user;
+          console.log('ログイン成功:', user);
+          const userDocRef = doc(db, "users", user.uid);
+          await setDoc(userDocRef, {
+            displayName: user.displayName || null,
+            email: user.email || null,
+            photoURL: user.photoURL || null,
+            uid: user.uid,
+            loginTimestamp: new Date()
+          }, { merge: true });
+        })
+        .catch((error) => {
+          console.error('ログイン失敗:', error);
+        });
+    });
+
+    signOutBtn.addEventListener('click', () => {
+      signOut(auth).catch((error) => {
+        console.error('サインアウト失敗:', error);
       });
     });
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        isAdmin = user.email === adminEmail;
+        userInfoDiv.innerHTML = `<div id="user-info-container">ログイン中（${isAdmin ? "管理者" : "一般ユーザー"}）</div>`;
+        userInfoDiv.style.display = 'block';
+        googleSignInBtn.style.display = 'none';
+        signOutBtnContainer.style.display = 'block';
+
+        form.style.display = isAdmin ? 'block' : 'none';
+        loadPosts(isAdmin);
+      } else {
+        isAdmin = false;
+        userInfoDiv.style.display = 'none';
+        googleSignInBtn.style.display = 'block';
+        signOutBtnContainer.style.display = 'none';
+
+        form.style.display = 'none';
+        loadPosts(false);
+      }
+    });
   </script>
+
 
 </body>
 
