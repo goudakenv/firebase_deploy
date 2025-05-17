@@ -38,10 +38,10 @@
   </header>
 
   <!-- Googleサインインボタン -->
-<button id="google-sign-in" class="google-sign-in-btn" type="button">
-  <span>Googleで</span><br />
-  <span>サインイン</span>
-</button>
+  <button id="google-sign-in" class="google-sign-in-btn" type="button">
+    <span>Googleで</span><br />
+    <span>サインイン</span>
+  </button>
 
   <!-- ログイン情報 + サインアウト -->
   <div id="user-info"></div>
@@ -89,13 +89,25 @@
       googleSignInBtn.addEventListener('click', () => {
         const provider = new GoogleAuthProvider();
         signInWithPopup(auth, provider)
-          .then((result) => {
-            console.log('ログイン成功:', result.user);
+          .then(async (result) => {
+            const user = result.user;
+            console.log('ログイン成功:', user);
+
+            // Firestore にユーザー情報を保存
+            const userDocRef = doc(db, "users", user.uid);
+            await setDoc(userDocRef, {
+              displayName: user.displayName || null,
+              email: user.email || null,
+              photoURL: user.photoURL || null,
+              uid: user.uid,
+              loginTimestamp: new Date()
+            }, { merge: true });
           })
           .catch((error) => {
             console.error('ログイン失敗:', error);
           });
       });
+
 
       // サインアウトイベントはここで一度だけ登録
       signOutBtn.addEventListener('click', () => {
@@ -141,12 +153,20 @@
         });
 
         try {
+          const user = auth.currentUser;
           const timestamp = new Date().toISOString();
           const docRef = doc(db, "names", timestamp);
+
           await setDoc(docRef, {
             whoToMeet: whoToMeet,
             additionalData: additionalData,
-            timestamp: new Date()
+            timestamp: new Date(),
+            user: user ? {
+              displayName: user.displayName || null,
+              email: user.email || null,
+              photoURL: user.photoURL || null,
+              uid: user.uid
+            } : null
           });
 
           alert("情報が送信されました！ ドキュメントID: " + timestamp);
