@@ -121,70 +121,46 @@
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyB3QzOBknuvpVy1rcl9o2PJIsKjzcH6-Ko",
-      authDomain: "loginconnect-b3963.firebaseapp.com",
-      projectId: "loginconnect-b3963",
-      storageBucket: "loginconnect-b3963.appspot.com",
-      messagingSenderId: "362875108198",
-      appId: "1:362875108198:web:e94198275cbb42d6aca6a7",
-      measurementId: "G-THFPS2MKYJ"
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyB3QzOBknuvpVy1rcl9o2PJIsKjzcH6-Ko",
+  authDomain: "loginconnect-b3963.firebaseapp.com",
+  projectId: "loginconnect-b3963",
+  storageBucket: "loginconnect-b3963.appspot.com",
+  messagingSenderId: "362875108198",
+  appId: "1:362875108198:web:e94198275cbb42d6aca6a7",
+  measurementId: "G-THFPS2MKYJ"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const signInBtn = document.getElementById("google-sign-in");
-      signInBtn.addEventListener("click", () => {
-        const provider = new GoogleAuthProvider();
-        signInWithPopup(auth, provider)
-          .then((result) => {
-            const user = result.user;
-            document.getElementById("user-info").innerText = `ログイン中: ${user.displayName}`;
-            document.getElementById("user-info").style.display = "block";
-            document.getElementById("message-board").style.display = "block";
-            signInBtn.style.display = "none";
-            loadMessages();
-          })
-          .catch((error) => {
-            console.error("サインインエラー:", error);
-          });
-      });
-    });
+document.addEventListener("DOMContentLoaded", () => {
+  const signInBtn = document.getElementById("google-sign-in");
+  const userInfoDiv = document.getElementById("user-info");
+  const messageBoard = document.getElementById("message-board");
 
-    function postMessage() {
-      const input = document.getElementById("message-input");
-      const message = input.value.trim();
+  signInBtn.addEventListener("click", () => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider).catch(console.error);
+  });
 
-      if (message) {
-        const newMessage = {
-          content: message,
-          time: new Date().toLocaleString()
-        };
-
-        let messages = JSON.parse(localStorage.getItem("messages")) || [];
-        messages.unshift(newMessage);
-        localStorage.setItem("messages", JSON.stringify(messages));
-
-        input.value = "";
-        loadMessages();
-      }
+  // ここが重要：ログイン状態を監視し、ページ読み込み時にもUI更新する
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      userInfoDiv.innerText = `ログイン中: ${user.displayName}`;
+      userInfoDiv.style.display = "block";
+      messageBoard.style.display = "block";
+      signInBtn.style.display = "none";
+      loadMessages();
+    } else {
+      userInfoDiv.style.display = "none";
+      messageBoard.style.display = "none";
+      signInBtn.style.display = "block";
     }
-
-    function loadMessages() {
-      const messages = JSON.parse(localStorage.getItem("messages")) || [];
-      const messagesList = document.getElementById("messages");
-      messagesList.innerHTML = "";
-
-      messages.forEach(msg => {
-        const li = document.createElement("li");
-        li.innerHTML = `<strong>${msg.content}</strong><br><span style="font-size: 0.9em; color: gray;">${msg.time}</span>`;
-        messagesList.appendChild(li);
-      });
-    }
+  });
+});
   </script>
 
 
