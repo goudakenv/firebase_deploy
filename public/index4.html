@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="情報共有WEBシステム">
+    <title>意見グラフ</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        #opinions-container {
+            max-width: 800px;
+            margin: 50px auto;
+            /* 中央寄せ + 上下余白 */
+            padding: 0 20px;
+        }
+
+        .opinion-card {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<!-- 中略（headまで変更なし） -->
+
+<body>
+    <header>
+        <div class="header-content">
+            <h1>PARLEY</h1>
+            <nav class="nav-menu">
+                <ul>
+                    <li><a href="/">意見箱</a></li>
+                    <li><a href="/board">掲示板</a></li>
+                    <li><a href="index3.html">調整中</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Googleサインインボタン -->
+    <button id="google-sign-in" class="google-sign-in-btn" type="button">
+        <span>Googleで</span><br />
+        <span>サインイン</span>
+    </button>
+
+    <!-- ログイン情報 + サインアウト -->
+    <div id="user-info"></div>
+    <div id="sign-out-btn-container" style="display:none;">
+        <button id="sign-out-btn">サインアウト</button>
+    </div>
+
+    <h2>意見グラフ</h2>
+    <canvas id="opinionChart" width="400" height="400"></canvas>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB3QzOBknuvpVy1rcl9o2PJIsKjzcH6-Ko",
+            authDomain: "loginconnect-b3963.firebaseapp.com",
+            projectId: "loginconnect-b3963",
+            storageBucket: "loginconnect-b3963.appspot.com",
+            messagingSenderId: "362875108198",
+            appId: "1:362875108198:web:e94198275cbb42d6aca6a7",
+            measurementId: "G-THFPS2MKYJ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const googleSignInBtn = document.getElementById('google-sign-in');
+        const userInfoDiv = document.getElementById('user-info');
+        const signOutBtnContainer = document.getElementById('sign-out-btn-container');
+        const signOutBtn = document.getElementById('sign-out-btn');
+
+        googleSignInBtn.addEventListener('click', () => {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider).catch(error => console.error('ログイン失敗:', error));
+        });
+
+        signOutBtn.addEventListener('click', () => {
+            signOut(auth).catch(error => console.error('サインアウト失敗:', error));
+        });
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                userInfoDiv.innerHTML = `<div>ログイン中</div>`;
+                userInfoDiv.style.display = 'block';
+                googleSignInBtn.style.display = 'none';
+                signOutBtnContainer.style.display = 'block';
+
+                if (user.email === "proper393@gmail.com") {
+                    drawChart();
+                } else {
+                    document.getElementById('opinionChart').outerHTML = '<p>このアカウントではグラフを表示できません。</p>';
+                }
+            } else {
+                userInfoDiv.style.display = 'none';
+                googleSignInBtn.style.display = 'block';
+                signOutBtnContainer.style.display = 'none';
+                document.getElementById('opinionChart').outerHTML = '<p>ログインしてグラフを表示してください。</p>';
+            }
+        });
+
+        async function drawChart() {
+            try {
+                const snapshot = await getDocs(collection(db, "names"));
+                const opinionCounts = {};
+
+                snapshot.forEach(doc => {
+                    const who = doc.data().whoToMeet;
+                    if (who) {
+                        opinionCounts[who] = (opinionCounts[who] || 0) + 1;
+                    }
+                });
+
+                const labels = Object.keys(opinionCounts);
+                const data = Object.values(opinionCounts);
+
+                new Chart(document.getElementById('opinionChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '話したい人数',
+                            data: data,
+                            backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('グラフ描画失敗:', error);
+                document.getElementById('opinionChart').outerHTML = '<p>グラフの読み込み中にエラーが発生しました。</p>';
+            }
+        }
+    </script>
+
+    <footer class="footer-github">
+        <p>📂 GitHubリポジトリ:
+            <a href="https://github.com/goudakenv/firebase_deploy" target="_blank" rel="noopener noreferrer">
+                https://github.com/goudakenv/firebase_deploy
+            </a>
+        </p>
+    </footer>
+</body>
+
+
+</html>
