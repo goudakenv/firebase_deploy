@@ -7,6 +7,30 @@
     <meta name="description" content="情報共有WEBシステム">
     <title>意見一覧</title>
     <link rel="stylesheet" href="style.css" />
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        #opinions-container {
+            max-width: 800px;
+            margin: 50px auto;
+            /* 中央寄せ + 上下余白 */
+            padding: 0 20px;
+        }
+
+        .opinion-card {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            line-height: 1.6;
+        }
+    </style>
 </head>
 
 <body>
@@ -82,27 +106,27 @@
         });
 
         auth.onAuthStateChanged((user) => {
-    if (user) {
-        if (user.email === "proper393@gmail.com") {
-            userInfoDiv.innerHTML = `<div>ログイン中</div>`;
-            userInfoDiv.style.display = 'block';
-            googleSignInBtn.style.display = 'none';
-            signOutBtnContainer.style.display = 'block';
-            loadOpinions();
-        } else {
-            userInfoDiv.innerHTML = `<div>ログイン中</div>`;
-            userInfoDiv.style.display = 'block';
-            googleSignInBtn.style.display = 'none';
-            signOutBtnContainer.style.display = 'block';
-            opinionsContainer.innerHTML = '<p>このアカウントでは意見一覧を表示できません。</p>';
-        }
-    } else {
-        userInfoDiv.style.display = 'none';
-        googleSignInBtn.style.display = 'block';
-        signOutBtnContainer.style.display = 'none';
-        opinionsContainer.innerHTML = '<p>ログインして意見一覧を表示してください。</p>';
-    }
-});
+            if (user) {
+                if (user.email === "proper393@gmail.com") {
+                    userInfoDiv.innerHTML = `<div>ログイン中</div>`;
+                    userInfoDiv.style.display = 'block';
+                    googleSignInBtn.style.display = 'none';
+                    signOutBtnContainer.style.display = 'block';
+                    loadOpinions();
+                } else {
+                    userInfoDiv.innerHTML = `<div>ログイン中</div>`;
+                    userInfoDiv.style.display = 'block';
+                    googleSignInBtn.style.display = 'none';
+                    signOutBtnContainer.style.display = 'block';
+                    opinionsContainer.innerHTML = '<p>このアカウントでは意見一覧を表示できません。</p>';
+                }
+            } else {
+                userInfoDiv.style.display = 'none';
+                googleSignInBtn.style.display = 'block';
+                signOutBtnContainer.style.display = 'none';
+                opinionsContainer.innerHTML = '<p>ログインして意見一覧を表示してください。</p>';
+            }
+        });
 
 
         async function loadOpinions() {
