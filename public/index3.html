@@ -84,13 +84,13 @@
         auth.onAuthStateChanged((user) => {
     if (user) {
         if (user.email === "proper393@gmail.com") {
-            userInfoDiv.innerHTML = `<div>ログイン中 (${user.email})</div>`;
+            userInfoDiv.innerHTML = `<div>ログイン中</div>`;
             userInfoDiv.style.display = 'block';
             googleSignInBtn.style.display = 'none';
             signOutBtnContainer.style.display = 'block';
             loadOpinions();
         } else {
-            userInfoDiv.innerHTML = `<div>アクセス権限がありません (${user.email})</div>`;
+            userInfoDiv.innerHTML = `<div>ログイン中</div>`;
             userInfoDiv.style.display = 'block';
             googleSignInBtn.style.display = 'none';
             signOutBtnContainer.style.display = 'block';

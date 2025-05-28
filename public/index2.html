@@ -268,8 +268,7 @@
     onAuthStateChanged(auth, (user) => {
       if (user) {
         isAdmin = user.email === adminEmail;
-        userInfoDiv.innerHTML = `<div id="user-info-container">ログイン中（${isAdmin ? "管理者" : "一般ユーザー"
-          }）</div>`;
+        userInfoDiv.innerHTML = `<div id="user-info-container">ログイン中</div>`;
         userInfoDiv.style.display = "block";
         googleSignInBtn.style.display = "none";
         signOutBtnContainer.style.display = "block";
