@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="情報共有WEBシステム">
   <title>掲示板</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -44,7 +45,6 @@
     <button type="submit">投稿</button>
   </form>
 
-  <ul id="postsList"></ul>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
@@ -135,6 +135,7 @@
 `;
 
           if (isAdminFlag) {
+              // 削除ボタン
             const deleteBtn = document.createElement("button");
             deleteBtn.textContent = "削除";
             deleteBtn.style.marginLeft = "10px";
@@ -142,6 +143,66 @@
               await deleteDoc(doc(db, "posts", docSnap.id));
               loadPosts(isAdminFlag);
             });
+
+  // 編集ボタン
+  const editBtn = document.createElement("button");
+  editBtn.textContent = "編集";
+  editBtn.style.marginLeft = "10px";
+  editBtn.addEventListener("click", () => {
+  // すでに表示されている編集フォームを削除
+  const existingForm = li.querySelector(".edit-form");
+  if (existingForm) {
+    existingForm.remove();
+    return;
+  }
+
+  // 編集フォームの要素を作成
+  const formDiv = document.createElement("div");
+  formDiv.className = "edit-form";
+
+  formDiv.innerHTML = `
+    <input type="text" class="edit-title" value="${post.title}" style="width: 90%; margin: 5px 0; font-size: 1.1em;" />
+    <br/>
+    <textarea class="edit-content" rows="6" style="width: 90%; margin: 5px 0; font-size: 1em;">${post.content}</textarea>
+    <br/>
+    <button class="save-edit">保存</button>
+    <button class="cancel-edit">キャンセル</button>
+  `;
+
+  // 編集フォームをliの末尾に追加
+  li.appendChild(formDiv);
+
+  // 保存ボタン処理
+  formDiv.querySelector(".save-edit").addEventListener("click", async () => {
+    const newTitle = formDiv.querySelector(".edit-title").value.trim();
+    const newContent = formDiv.querySelector(".edit-content").value.trim();
+
+    if (newTitle && newContent) {
+      try {
+        const postRef = doc(db, "posts", docSnap.id);
+        await setDoc(postRef, {
+          ...post,
+          title: newTitle,
+          content: newContent,
+        });
+        loadPosts(isAdminFlag); // 再読み込み
+      } catch (error) {
+        console.error("編集に失敗:", error);
+        alert("編集に失敗しました。");
+      }
+    } else {
+      alert("タイトルまたは内容が空です。");
+    }
+  });
+
+  // キャンセルボタン処理
+  formDiv.querySelector(".cancel-edit").addEventListener("click", () => {
+    formDiv.remove();
+  });
+});
+
+
+  li.appendChild(editBtn);
             li.appendChild(deleteBtn);
           }
 
@@ -226,6 +287,8 @@
       }
     });
   </script>
+
+<ul id="postsList"></ul>
 
   <footer class="footer-github">
     <p>📂 GitHubリポジトリ:
