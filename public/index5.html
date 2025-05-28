@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="情報共有WEBシステム">
+    <title>検索</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        #opinions-container {
+            max-width: 800px;
+            margin: 50px auto;
+            /* 中央寄せ + 上下余白 */
+            padding: 0 20px;
+        }
+
+        .opinion-card {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            line-height: 1.6;
+        }
+
+        #search-box {
+            width: 200px;
+            /* 横幅を小さくする（例: 200px） */
+            height: 30px;
+            /* 高さを調整（例: 30px） */
+            font-size: 14px;
+            /* 文字サイズも小さめに */
+            padding: 4px 8px;
+            /* 内側の余白を調整 */
+            border-radius: 6px;
+            /* 角を少し丸める */
+        }
+
+        #search-btn {
+            height: 34px;
+            /* 検索ボタンの高さを合わせる */
+            font-size: 14px;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="header-content">
+            <h1>PARLEY</h1>
+            <nav class="nav-menu">
+                <ul>
+                    <li><a href="/">意見箱</a></li>
+                    <li><a href="/board">掲示板</a></li>
+                    <li><a href="index3.html">調整中</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Googleサインインボタン -->
+    <button id="google-sign-in" class="google-sign-in-btn" type="button">
+        <span>Googleで</span><br />
+        <span>サインイン</span>
+    </button>
+
+    <!-- ログイン情報 + サインアウト -->
+    <div id="user-info"></div>
+
+    <!-- サインアウトボタン -->
+    <div id="sign-out-btn-container" style="display:none;">
+        <button id="sign-out-btn">サインアウト</button>
+    </div>
+
+    <h2>名前を検索</h2>
+    <input type="text" id="search-box" placeholder="例: 田中" />
+    <button id="search-btn">検索</button>
+    <div id="search-result"></div>
+
+    <h3>人気検索ランキング（投稿数）</h3>
+    <ol id="ranking-list"></ol>
+
+    <h2>検索結果</h2>
+    <div id="opinions-container">検索結果を表示します。</div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB3QzOBknuvpVy1rcl9o2PJIsKjzcH6-Ko",
+            authDomain: "loginconnect-b3963.firebaseapp.com",
+            projectId: "loginconnect-b3963",
+            storageBucket: "loginconnect-b3963.appspot.com",
+            messagingSenderId: "362875108198",
+            appId: "1:362875108198:web:e94198275cbb42d6aca6a7",
+            measurementId: "G-THFPS2MKYJ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const googleSignInBtn = document.getElementById('google-sign-in');
+        const userInfoDiv = document.getElementById('user-info');
+        const signOutBtnContainer = document.getElementById('sign-out-btn-container');
+        const signOutBtn = document.getElementById('sign-out-btn');
+        const opinionsContainer = document.getElementById('opinions-container');
+
+        googleSignInBtn.addEventListener('click', () => {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider)
+                .then(() => { })
+                .catch((error) => {
+                    console.error('ログイン失敗:', error);
+                });
+        });
+
+        signOutBtn.addEventListener('click', () => {
+            signOut(auth).catch((error) => {
+                console.error('サインアウト失敗:', error);
+            });
+        });
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                if (user.email === "proper393@gmail.com") {
+                    userInfoDiv.innerHTML = `<div>ログイン中</div>`;
+                    userInfoDiv.style.display = 'block';
+                    googleSignInBtn.style.display = 'none';
+                    signOutBtnContainer.style.display = 'block';
+                    loadOpinions();
+                } else {
+                    userInfoDiv.innerHTML = `<div>ログイン中</div>`;
+                    userInfoDiv.style.display = 'block';
+                    googleSignInBtn.style.display = 'none';
+                    signOutBtnContainer.style.display = 'block';
+                    opinionsContainer.innerHTML = '<p>このアカウントでは意見一覧を表示できません。</p>';
+                }
+            } else {
+                userInfoDiv.style.display = 'none';
+                googleSignInBtn.style.display = 'block';
+                signOutBtnContainer.style.display = 'none';
+                opinionsContainer.innerHTML = '<p>ログインして意見一覧を表示してください。</p>';
+            }
+        });
+
+        document.getElementById('search-btn').addEventListener('click', () => {
+            const keyword = document.getElementById('search-box').value.trim();
+            searchOpinions(keyword);
+        });
+
+        async function searchOpinions(keyword) {
+            const opinionsContainer = document.getElementById('opinions-container');
+            const resultDiv = document.getElementById('search-result');
+            const rankingList = document.getElementById('ranking-list');
+
+            opinionsContainer.innerHTML = '読み込み中...';
+            resultDiv.textContent = '';
+            rankingList.innerHTML = '';
+
+            try {
+                const q = query(collection(db, "names"), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+
+                let found = false;
+                let html = '';
+                const counts = {};
+
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const name = data.whoToMeet;
+                    counts[name] = (counts[name] || 0) + 1;
+
+                    if (name.includes(keyword)) {
+                        found = true;
+                        html += `<div class="opinion-card">
+              <p><strong>話したい人:</strong> ${name}</p>
+              ${data.additionalData?.map(field => `
+                <div><strong>${field.title}:</strong> ${field.content}</div>
+              `).join('')}
+              <p><strong>投稿者:</strong> ${data.user?.email || '不明'}</p>
+              <p><strong>投稿時間:</strong> ${new Date(data.timestamp.seconds * 1000).toLocaleString()}</p>
+            </div>`;
+                    }
+                });
+
+                opinionsContainer.innerHTML = html || '<p>一致するデータがありません。</p>';
+                resultDiv.textContent = found ? '🔍 見つかりました！' : '❌ 見つかりませんでした。';
+
+                const sorted = Object.entries(counts)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 3);
+
+                rankingList.innerHTML = sorted
+                    .map(([name, count]) => `<li>${name}（${count}件）</li>`)
+                    .join('');
+
+            } catch (error) {
+                console.error('検索失敗:', error);
+                opinionsContainer.innerHTML = '<p>データの読み込み中にエラーが発生しました。</p>';
+            }
+        }
+    </script>
+
+    <footer class="footer-github">
+        <p>📂 GitHubリポジトリ:
+            <a href="https://github.com/goudakenv/firebase_deploy" target="_blank" rel="noopener noreferrer">
+                https://github.com/goudakenv/firebase_deploy
+            </a>
+        </p>
+    </footer>
+</body>
+
+</html>
