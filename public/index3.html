@@ -4,124 +4,46 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>意見箱</title>
+    <title>意見一覧</title>
     <link rel="stylesheet" href="style.css" />
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-
-        h1 {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        #message-board {
-            width: 80%;
-            margin: 20px auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            display: none;
-            /* 初期状態では非表示 */
-        }
-
-        #message-board textarea {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            margin-bottom: 10px;
-        }
-
-        #message-board button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        #message-board button:hover {
-            background-color: #45a049;
-        }
-
-        #messages {
-            list-style-type: none;
-            /* これでリストの点を非表示に */
-            padding: 0;
-            width: 80%;
-            /* 投稿フォームと同じ横幅に設定 */
-            margin: 20px auto;
-            /* 上下に余白を追加 */
-        }
-
-        #messages li {
-            background-color: #fff;
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 4px;
-            width: 100%;
-            /* #message-board と同じ幅に設定 */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Googleサインイン用のボタン */
-        #google-sign-in {
-            text-align: center;
-            margin-top: 20px;
-        }
-    </style>
 </head>
 
 <body>
     <header>
         <div class="header-content">
-            <h1 style="
-    text-align: center;
-  ">同窓会</h1>
+            <h1>PARLEY</h1>
             <nav class="nav-menu">
                 <ul>
-                    <li><a href="/opinions">意見箱</a></li>
+                    <li><a href="/">意見一覧</a></li>
                     <li><a href="/board">掲示板</a></li>
+                    <li><a href="index3.html">調整中</a></li>
                 </ul>
             </nav>
         </div>
     </header>
-    </div>
-    </header>
 
-    <!-- Googleサインイン用のカスタムボタン（初期非表示） -->
-    <div id="google-sign-in" class="google-sign-in-btn hidden">
+    <!-- Googleサインインボタン -->
+    <button id="google-sign-in" class="google-sign-in-btn" type="button">
         <span>Googleで</span><br />
         <span>サインイン</span>
+    </button>
+
+    <!-- ログイン情報 + サインアウト -->
+    <div id="user-info"></div>
+
+    <!-- サインアウトボタン -->
+    <div id="sign-out-btn-container" style="display:none;">
+        <button id="sign-out-btn">サインアウト</button>
     </div>
 
-    <!-- ユーザー情報表示 -->
-    <div id="user-info" style="display: none;">ログイン中</div>
-
-    <h2>掲示板</h2>
-
-    <!-- 投稿フォーム -->
-    <div id="message-board">
-        <textarea id="message-input" placeholder="メッセージを入力..."></textarea><br>
-        <button onclick="postMessage()">投稿</button>
-    </div>
-
-    <!-- メッセージ表示 -->
-    <ul id="messages"></ul>
-
+    <h2>意見一覧</h2>
+    <div id="opinions-container">読み込み中...</div>
 
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB3QzOBknuvpVy1rcl9o2PJIsKjzcH6-Ko",
@@ -134,59 +56,80 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
         const auth = getAuth(app);
 
-        document.addEventListener("DOMContentLoaded", () => {
-            const signInBtn = document.getElementById("google-sign-in");
-            signInBtn.addEventListener("click", () => {
-                const provider = new GoogleAuthProvider();
-                signInWithPopup(auth, provider)
-                    .then((result) => {
-                        const user = result.user;
-                        document.getElementById("user-info").innerText = `ログイン中: ${user.displayName}`;
-                        document.getElementById("user-info").style.display = "block";
-                        document.getElementById("message-board").style.display = "block";
-                        signInBtn.style.display = "none";
-                        loadMessages();
-                    })
-                    .catch((error) => {
-                        console.error("サインインエラー:", error);
-                    });
+        const googleSignInBtn = document.getElementById('google-sign-in');
+        const userInfoDiv = document.getElementById('user-info');
+        const signOutBtnContainer = document.getElementById('sign-out-btn-container');
+        const signOutBtn = document.getElementById('sign-out-btn');
+        const opinionsContainer = document.getElementById('opinions-container');
+
+        googleSignInBtn.addEventListener('click', () => {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider)
+                .then(() => { })
+                .catch((error) => {
+                    console.error('ログイン失敗:', error);
+                });
+        });
+
+        signOutBtn.addEventListener('click', () => {
+            signOut(auth).catch((error) => {
+                console.error('サインアウト失敗:', error);
             });
         });
 
-        function postMessage() {
-            const input = document.getElementById("message-input");
-            const message = input.value.trim();
-
-            if (message) {
-                const newMessage = {
-                    content: message,
-                    time: new Date().toLocaleString()
-                };
-
-                let messages = JSON.parse(localStorage.getItem("messages")) || [];
-                messages.unshift(newMessage);
-                localStorage.setItem("messages", JSON.stringify(messages));
-
-                input.value = "";
-                loadMessages();
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                userInfoDiv.innerHTML = `<div>ログイン中 (${user.email})</div>`;
+                userInfoDiv.style.display = 'block';
+                googleSignInBtn.style.display = 'none';
+                signOutBtnContainer.style.display = 'block';
+                loadOpinions();
+            } else {
+                userInfoDiv.style.display = 'none';
+                googleSignInBtn.style.display = 'block';
+                signOutBtnContainer.style.display = 'none';
+                opinionsContainer.innerHTML = '<p>ログインして意見一覧を表示してください。</p>';
             }
-        }
+        });
 
-        function loadMessages() {
-            const messages = JSON.parse(localStorage.getItem("messages")) || [];
-            const messagesList = document.getElementById("messages");
-            messagesList.innerHTML = "";
+        async function loadOpinions() {
+            opinionsContainer.innerHTML = '読み込み中...';
+            try {
+                const q = query(collection(db, "names"), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+                let html = '';
 
-            messages.forEach(msg => {
-                const li = document.createElement("li");
-                li.innerHTML = `<strong>${msg.content}</strong><br><span style="font-size: 0.9em; color: gray;">${msg.time}</span>`;
-                messagesList.appendChild(li);
-            });
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    html += `<div class="opinion-card">
+            <p><strong>話したい人:</strong> ${data.whoToMeet}</p>
+            ${data.additionalData?.map(field => `
+              <div><strong>${field.title}:</strong> ${field.content}</div>
+            `).join('')}
+            <p><strong>投稿者:</strong> ${data.user?.email || '不明'}</p>
+            <p><strong>投稿時間:</strong> ${new Date(data.timestamp.seconds * 1000).toLocaleString()}</p>
+            <hr>
+          </div>`;
+                });
+
+                opinionsContainer.innerHTML = html || '<p>意見がまだありません。</p>';
+            } catch (error) {
+                console.error('データ取得失敗:', error);
+                opinionsContainer.innerHTML = '<p>データの読み込み中にエラーが発生しました。</p>';
+            }
         }
     </script>
 
+    <footer class="footer-github">
+        <p>📂 GitHubリポジトリ:
+            <a href="https://github.com/goudakenv/firebase_deploy" target="_blank" rel="noopener noreferrer">
+                https://github.com/goudakenv/firebase_deploy
+            </a>
+        </p>
+    </footer>
 </body>
 
 </html>
