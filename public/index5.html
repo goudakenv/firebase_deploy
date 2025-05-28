@@ -16,7 +16,7 @@
 
         #opinions-container {
             max-width: 800px;
-            margin: 50px auto;
+            margin: 20px auto 50px auto;
             /* 中央寄せ + 上下余白 */
             padding: 0 20px;
         }
@@ -31,24 +31,38 @@
             line-height: 1.6;
         }
 
-        #search-box {
-            width: 200px;
-            /* 横幅を小さくする（例: 200px） */
-            height: 30px;
-            /* 高さを調整（例: 30px） */
-            font-size: 14px;
-            /* 文字サイズも小さめに */
-            padding: 4px 8px;
-            /* 内側の余白を調整 */
-            border-radius: 6px;
-            /* 角を少し丸める */
+        #search-form {
+            max-width: 800px;
+            margin: 50px auto 0 auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            outline: none;
+            margin: 20px auto 20px;
         }
 
         #search-btn {
-            height: 34px;
-            /* 検索ボタンの高さを合わせる */
-            font-size: 14px;
-            margin-left: 4px;
+            padding: 9px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: background-color 0.3s ease;
+            margin: 20px auto 20px;
+        }
+
+        #search-btn:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
@@ -81,16 +95,14 @@
         <button id="sign-out-btn">サインアウト</button>
     </div>
 
-    <h2>名前を検索</h2>
-    <input type="text" id="search-box" placeholder="例: 田中" />
-    <button id="search-btn">検索</button>
-    <div id="search-result"></div>
+    <h2>検索</h2>
 
-    <h3>人気検索ランキング（投稿数）</h3>
-    <ol id="ranking-list"></ol>
+    <form id="search-form" onsubmit="return false;">
+        <input type="text" id="search-input" placeholder="話したい人の名前を入力してください" />
+        <button id="search-btn" type="submit">検索</button>
+    </form>
 
-    <h2>検索結果</h2>
-    <div id="opinions-container">検索結果を表示します。</div>
+    <div id="opinions-container">読み込み中...</div>
 
     <!-- Firebase SDK -->
     <script type="module">
@@ -117,6 +129,12 @@
         const signOutBtnContainer = document.getElementById('sign-out-btn-container');
         const signOutBtn = document.getElementById('sign-out-btn');
         const opinionsContainer = document.getElementById('opinions-container');
+
+        const searchForm = document.getElementById('search-form');
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+
+        let allOpinions = []; // 全データ保持用
 
         googleSignInBtn.addEventListener('click', () => {
             const provider = new GoogleAuthProvider();
@@ -156,61 +174,80 @@
             }
         });
 
-        document.getElementById('search-btn').addEventListener('click', () => {
-            const keyword = document.getElementById('search-box').value.trim();
-            searchOpinions(keyword);
-        });
-
-        async function searchOpinions(keyword) {
-            const opinionsContainer = document.getElementById('opinions-container');
-            const resultDiv = document.getElementById('search-result');
-            const rankingList = document.getElementById('ranking-list');
-
+        // Firestoreから全意見を取得し、allOpinionsに保存。初期表示は全件表示。
+        async function loadOpinions() {
             opinionsContainer.innerHTML = '読み込み中...';
-            resultDiv.textContent = '';
-            rankingList.innerHTML = '';
-
             try {
                 const q = query(collection(db, "names"), orderBy("timestamp", "desc"));
                 const querySnapshot = await getDocs(q);
-
-                let found = false;
-                let html = '';
-                const counts = {};
+                allOpinions = [];
 
                 querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    const name = data.whoToMeet;
-                    counts[name] = (counts[name] || 0) + 1;
-
-                    if (name.includes(keyword)) {
-                        found = true;
-                        html += `<div class="opinion-card">
-              <p><strong>話したい人:</strong> ${name}</p>
-              ${data.additionalData?.map(field => `
-                <div><strong>${field.title}:</strong> ${field.content}</div>
-              `).join('')}
-              <p><strong>投稿者:</strong> ${data.user?.email || '不明'}</p>
-              <p><strong>投稿時間:</strong> ${new Date(data.timestamp.seconds * 1000).toLocaleString()}</p>
-            </div>`;
-                    }
+                    allOpinions.push({ id: doc.id, data: doc.data() });
                 });
 
-                opinionsContainer.innerHTML = html || '<p>一致するデータがありません。</p>';
-                resultDiv.textContent = found ? '🔍 見つかりました！' : '❌ 見つかりませんでした。';
-
-                const sorted = Object.entries(counts)
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 3);
-
-                rankingList.innerHTML = sorted
-                    .map(([name, count]) => `<li>${name}（${count}件）</li>`)
-                    .join('');
-
+                displayOpinions(allOpinions);
             } catch (error) {
-                console.error('検索失敗:', error);
+                console.error('データ取得失敗:', error);
                 opinionsContainer.innerHTML = '<p>データの読み込み中にエラーが発生しました。</p>';
             }
+        }
+
+        // 意見一覧を表示する関数（配列を受け取る）
+        function displayOpinions(opinions) {
+            if (!opinions.length) {
+                opinionsContainer.innerHTML = '<p>該当する意見がありません。</p>';
+                return;
+            }
+
+            let html = '';
+            opinions.forEach(({ data }) => {
+                html += `<div class="opinion-card">
+                    <p><strong>話したい人:</strong> ${escapeHtml(data.whoToMeet)}</p>
+                    ${data.additionalData?.map(field => `
+                      <div><strong>${escapeHtml(field.title)}:</strong> ${escapeHtml(field.content)}</div>
+                    `).join('')}
+                    <p><strong>投稿者:</strong> ${escapeHtml(data.user?.email || '不明')}</p>
+                    <p><strong>投稿時間:</strong> ${new Date(data.timestamp.seconds * 1000).toLocaleString()}</p>
+                    <hr>
+                </div>`;
+            });
+            opinionsContainer.innerHTML = html;
+        }
+
+        // 検索ボタンクリック時の処理
+        searchForm.addEventListener('submit', () => {
+            const keyword = searchInput.value.trim().toLowerCase();
+
+            if (!keyword) {
+                // キーワードなしなら全件表示
+                displayOpinions(allOpinions);
+                return;
+            }
+
+            // whoToMeetにキーワードが含まれるデータのみ抽出（大文字小文字区別なし）
+            const filtered = allOpinions.filter(({ data }) =>
+                data.whoToMeet && data.whoToMeet.toLowerCase().includes(keyword)
+            );
+
+            displayOpinions(filtered);
+        });
+
+        // HTMLの特殊文字をエスケープする関数（XSS対策）
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/[&<>"'`=\/]/g, function (s) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;',
+                    '`': '&#x60;',
+                    '=': '&#x3D;',
+                    '/': '&#x2F;'
+                }[s];
+            });
         }
     </script>
 
