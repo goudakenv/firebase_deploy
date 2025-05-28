@@ -82,19 +82,28 @@
         });
 
         auth.onAuthStateChanged((user) => {
-            if (user) {
-                userInfoDiv.innerHTML = `<div>ログイン中 (${user.email})</div>`;
-                userInfoDiv.style.display = 'block';
-                googleSignInBtn.style.display = 'none';
-                signOutBtnContainer.style.display = 'block';
-                loadOpinions();
-            } else {
-                userInfoDiv.style.display = 'none';
-                googleSignInBtn.style.display = 'block';
-                signOutBtnContainer.style.display = 'none';
-                opinionsContainer.innerHTML = '<p>ログインして意見一覧を表示してください。</p>';
-            }
-        });
+    if (user) {
+        if (user.email === "proper393@gmail.com") {
+            userInfoDiv.innerHTML = `<div>ログイン中 (${user.email})</div>`;
+            userInfoDiv.style.display = 'block';
+            googleSignInBtn.style.display = 'none';
+            signOutBtnContainer.style.display = 'block';
+            loadOpinions();
+        } else {
+            userInfoDiv.innerHTML = `<div>アクセス権限がありません (${user.email})</div>`;
+            userInfoDiv.style.display = 'block';
+            googleSignInBtn.style.display = 'none';
+            signOutBtnContainer.style.display = 'block';
+            opinionsContainer.innerHTML = '<p>このアカウントでは意見一覧を表示できません。</p>';
+        }
+    } else {
+        userInfoDiv.style.display = 'none';
+        googleSignInBtn.style.display = 'block';
+        signOutBtnContainer.style.display = 'none';
+        opinionsContainer.innerHTML = '<p>ログインして意見一覧を表示してください。</p>';
+    }
+});
+
 
         async function loadOpinions() {
             opinionsContainer.innerHTML = '読み込み中...';
