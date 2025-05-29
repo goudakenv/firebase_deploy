@@ -90,20 +90,16 @@
         <span>Googleで</span><br />
         <span>サインイン</span>
     </button>
-
     <div id="user-info"></div>
-
     <div id="sign-out-btn-container" style="display:none;">
         <button id="sign-out-btn">サインアウト</button>
     </div>
 
     <h2>検索</h2>
-
     <form id="search-form" onsubmit="return false;">
         <input type="text" id="search-input" placeholder="話したい人の名前を入力してください" />
         <button id="search-btn" type="submit">検索</button>
     </form>
-
     <div id="search-summary"></div>
     <div id="opinions-container">読み込み中...</div>
 
@@ -125,7 +121,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-
         const googleSignInBtn = document.getElementById('google-sign-in');
         const userInfoDiv = document.getElementById('user-info');
         const signOutBtnContainer = document.getElementById('sign-out-btn-container');
@@ -134,8 +129,8 @@
         const searchForm = document.getElementById('search-form');
         const searchInput = document.getElementById('search-input');
         const searchSummary = document.getElementById('search-summary');
-
         let allOpinions = [];
+        let isAdmin = false;
 
         googleSignInBtn.addEventListener('click', () => {
             const provider = new GoogleAuthProvider();
@@ -152,21 +147,18 @@
 
         auth.onAuthStateChanged((user) => {
             if (user) {
-                userInfoDiv.innerHTML = `<div>ログイン中</div>`;
+                isAdmin = user.email === "proper393@gmail.com";
+                userInfoDiv.innerHTML = `<div>ログイン中: ${user.email}</div>`;
                 userInfoDiv.style.display = 'block';
                 googleSignInBtn.style.display = 'none';
                 signOutBtnContainer.style.display = 'block';
-
-                if (user.email === "proper393@gmail.com") {
-                    loadOpinions();
-                } else {
-                    opinionsContainer.innerHTML = '<p>このアカウントでは意見一覧を表示できません。</p>';
-                }
+                loadOpinions();
             } else {
+                isAdmin = false;
                 userInfoDiv.style.display = 'none';
                 googleSignInBtn.style.display = 'block';
                 signOutBtnContainer.style.display = 'none';
-                opinionsContainer.innerHTML = '<p>ログインして意見一覧を表示してください。</p>';
+                loadOpinions();
             }
         });
 
@@ -176,11 +168,10 @@
                 const q = query(collection(db, "names"), orderBy("timestamp", "desc"));
                 const querySnapshot = await getDocs(q);
                 allOpinions = [];
-
                 querySnapshot.forEach(doc => {
                     allOpinions.push({ id: doc.id, data: doc.data() });
                 });
-
+                // 最初は検索結果なし、一覧表示
                 displayOpinions(allOpinions);
             } catch (error) {
                 console.error('データ取得失敗:', error);
@@ -189,31 +180,31 @@
         }
 
         function displayOpinions(opinions) {
-            if (!opinions.length) {
-                opinionsContainer.innerHTML = '<p>該当する意見がありません。</p>';
-                searchSummary.innerHTML = '';
+            if (!isAdmin) {
+                opinionsContainer.innerHTML = '<p>検索件数とランキングは表示されますが、意見一覧は管理者のみ閲覧可能です。</p>';
                 return;
             }
-
+            if (!opinions.length) {
+                opinionsContainer.innerHTML = '<p>該当する意見がありません。</p>';
+                return;
+            }
             let html = '';
             opinions.forEach(({ data }) => {
                 html += `<div class="opinion-card">
-                    <p><strong>話したい人:</strong> ${escapeHtml(data.whoToMeet)}</p>
-                    ${data.additionalData?.map(field => `
-                      <div><strong>${escapeHtml(field.title)}:</strong> ${escapeHtml(field.content)}</div>
-                    `).join('')}
-                    <p><strong>投稿者:</strong> ${escapeHtml(data.user?.email || '不明')}</p>
-                    <p><strong>投稿時間:</strong> ${new Date(data.timestamp.seconds * 1000).toLocaleString()}</p>
-                    <hr>
-                </div>`;
+            <p><strong>話したい人:</strong> ${escapeHtml(data.whoToMeet)}</p>
+            ${data.additionalData?.map(field => `
+              <div><strong>${escapeHtml(field.title)}:</strong> ${escapeHtml(field.content)}</div>
+            `).join('')}
+            <p><strong>投稿者:</strong> ${escapeHtml(data.user?.email || '不明')}</p>
+            <p><strong>投稿時間:</strong> ${new Date(data.timestamp.seconds * 1000).toLocaleString()}</p>
+            <hr>
+        </div>`;
             });
             opinionsContainer.innerHTML = html;
         }
 
-        // 🔍 検索処理 + ランキング判定
         searchForm.addEventListener('submit', () => {
             const keyword = searchInput.value.trim().toLowerCase();
-
             if (!keyword) {
                 displayOpinions(allOpinions);
                 searchSummary.innerHTML = '';
@@ -224,7 +215,11 @@
                 data.whoToMeet && data.whoToMeet.toLowerCase().includes(keyword)
             );
 
-            displayOpinions(filtered);
+            if (isAdmin) {
+                displayOpinions(filtered);
+            } else {
+                opinionsContainer.innerHTML = '<p>検索件数とランキングは表示されますが、意見一覧は管理者のみ閲覧可能です。</p>';
+            }
 
             const countMap = {};
             allOpinions.forEach(({ data }) => {
@@ -234,27 +229,17 @@
                 }
             });
 
-            const sortedCounts = Object.entries(countMap)
-                .sort((a, b) => b[1] - a[1]);
-
-            const matchKey = Object.keys(countMap).find(k => k.includes(keyword));
+            const sortedCounts = Object.entries(countMap).sort((a, b) => b[1] - a[1]);
             const matchedCount = filtered.length;
             const rank = sortedCounts.findIndex(([name]) => name.includes(keyword)) + 1;
-
             searchSummary.innerHTML = `${matchedCount}件見つかりました。${rank ? `（ランキング: ${rank}位）` : ''}`;
         });
 
         function escapeHtml(text) {
             if (!text) return '';
             return text.replace(/[&<>"'`=\/]/g, s => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#39;',
-                '`': '&#x60;',
-                '=': '&#x3D;',
-                '/': '&#x2F;'
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;',
+                "'": '&#39;', '`': '&#x60;', '=': '&#x3D;', '/': '&#x2F;'
             })[s]);
         }
     </script>
