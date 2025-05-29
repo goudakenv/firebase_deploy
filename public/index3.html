@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="情報共有WEBシステム">
-    <title>意見一覧</title>
+    <title>検索</title>
     <link rel="stylesheet" href="style.css" />
     <style>
         body {
@@ -16,8 +16,7 @@
 
         #opinions-container {
             max-width: 800px;
-            margin: 50px auto;
-            /* 中央寄せ + 上下余白 */
+            margin: 20px auto 50px auto;
             padding: 0 20px;
         }
 
@@ -29,6 +28,56 @@
             margin-bottom: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             line-height: 1.6;
+        }
+
+        .admin-actions {
+            margin-top: 10px;
+        }
+
+        .admin-actions button {
+            margin-right: 10px;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+
+        #search-form {
+            max-width: 800px;
+            margin: 50px auto 0 auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            outline: none;
+            margin: 20px auto 20px;
+        }
+
+        #search-btn {
+            padding: 9px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            margin: 20px auto 20px;
+        }
+
+        #search-btn:hover {
+            background-color: #45a049;
+        }
+
+        #search-summary {
+            max-width: 800px;
+            margin: 10px auto;
+            padding: 0 20px;
+            text-align: center;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -46,28 +95,24 @@
             </nav>
         </div>
     </header>
-
-    <!-- Googleサインインボタン -->
     <button id="google-sign-in" class="google-sign-in-btn" type="button">
         <span>Googleで</span><br />
         <span>サインイン</span>
     </button>
-
-    <!-- ログイン情報 + サインアウト -->
     <div id="user-info"></div>
-
-    <!-- サインアウトボタン -->
     <div id="sign-out-btn-container" style="display:none;">
         <button id="sign-out-btn">サインアウト</button>
     </div>
-
-    <h2>意見一覧</h2>
+    <h2>検索</h2>
+    <form id="search-form" onsubmit="return false;">
+        <input type="text" id="search-input" placeholder="話したい人の名前を入力してください" />
+        <button id="search-btn" type="submit">検索</button>
+    </form>
+    <div id="search-summary"></div>
     <div id="opinions-container">読み込み中...</div>
-
-    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -89,74 +134,127 @@
         const signOutBtnContainer = document.getElementById('sign-out-btn-container');
         const signOutBtn = document.getElementById('sign-out-btn');
         const opinionsContainer = document.getElementById('opinions-container');
+        const searchForm = document.getElementById('search-form');
+        const searchInput = document.getElementById('search-input');
+        const searchSummary = document.getElementById('search-summary');
+
+        let allOpinions = [];
+        let isAdmin = false;
 
         googleSignInBtn.addEventListener('click', () => {
             const provider = new GoogleAuthProvider();
-            signInWithPopup(auth, provider)
-                .then(() => { })
-                .catch((error) => {
-                    console.error('ログイン失敗:', error);
-                });
+            signInWithPopup(auth, provider).catch(error => console.error('ログイン失敗:', error));
         });
 
         signOutBtn.addEventListener('click', () => {
-            signOut(auth).catch((error) => {
-                console.error('サインアウト失敗:', error);
-            });
+            signOut(auth).catch(error => console.error('サインアウト失敗:', error));
         });
 
         auth.onAuthStateChanged((user) => {
             if (user) {
-                if (user.email === "proper393@gmail.com") {
-                    userInfoDiv.innerHTML = `<div>ログイン中</div>`;
-                    userInfoDiv.style.display = 'block';
-                    googleSignInBtn.style.display = 'none';
-                    signOutBtnContainer.style.display = 'block';
-                    loadOpinions();
-                } else {
-                    userInfoDiv.innerHTML = `<div>ログイン中</div>`;
-                    userInfoDiv.style.display = 'block';
-                    googleSignInBtn.style.display = 'none';
-                    signOutBtnContainer.style.display = 'block';
-                    opinionsContainer.innerHTML = '<p>このアカウントでは意見一覧を表示できません。</p>';
-                }
+                isAdmin = user.email === "proper393@gmail.com";
+                userInfoDiv.innerHTML = `<div>ログイン中: ${user.email}</div>`;
+                userInfoDiv.style.display = 'block';
+                googleSignInBtn.style.display = 'none';
+                signOutBtnContainer.style.display = 'block';
             } else {
+                isAdmin = false;
                 userInfoDiv.style.display = 'none';
                 googleSignInBtn.style.display = 'block';
                 signOutBtnContainer.style.display = 'none';
-                opinionsContainer.innerHTML = '<p>ログインして意見一覧を表示してください。</p>';
             }
+            loadOpinions();
         });
-
 
         async function loadOpinions() {
             opinionsContainer.innerHTML = '読み込み中...';
             try {
                 const q = query(collection(db, "names"), orderBy("timestamp", "desc"));
                 const querySnapshot = await getDocs(q);
-                let html = '';
-
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    html += `<div class="opinion-card">
-            <p><strong>話したい人:</strong> ${data.whoToMeet}</p>
-            ${data.additionalData?.map(field => `
-              <div><strong>${field.title}:</strong> ${field.content}</div>
-            `).join('')}
-            <p><strong>投稿者:</strong> ${data.user?.email || '不明'}</p>
-            <p><strong>投稿時間:</strong> ${new Date(data.timestamp.seconds * 1000).toLocaleString()}</p>
-            <hr>
-          </div>`;
-                });
-
-                opinionsContainer.innerHTML = html || '<p>意見がまだありません。</p>';
+                allOpinions = querySnapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+                displayOpinions(allOpinions);
             } catch (error) {
                 console.error('データ取得失敗:', error);
                 opinionsContainer.innerHTML = '<p>データの読み込み中にエラーが発生しました。</p>';
             }
         }
-    </script>
 
+        function displayOpinions(opinions) {
+            if (!isAdmin) {
+                opinionsContainer.innerHTML = '<p>検索件数とランキングは表示されますが、意見一覧は管理者のみ閲覧可能です。</p>';
+                return;
+            }
+
+            if (!opinions.length) {
+                opinionsContainer.innerHTML = '<p>該当する意見がありません。</p>';
+                return;
+            }
+
+            opinionsContainer.innerHTML = opinions.map(({ id, data }) => `
+            <div class="opinion-card">
+                <p><strong>話したい人:</strong> ${escapeHtml(data.whoToMeet)}</p>
+                ${data.additionalData?.map(field => `
+                    <div><strong>${escapeHtml(field.title)}:</strong> ${escapeHtml(field.content)}</div>
+                `).join('') || ''}
+                <p><strong>投稿者:</strong> ${escapeHtml(data.user?.email || '不明')}</p>
+                <p><strong>投稿時間:</strong> ${new Date(data.timestamp.seconds * 1000).toLocaleString()}</p>
+                <div class="admin-actions">
+                    <button onclick="deleteOpinion('${id}')">削除</button>
+                    <button onclick="alert('編集機能は現在未実装です。')">編集</button>
+                </div>
+                <hr>
+            </div>
+        `).join('');
+        }
+
+        window.deleteOpinion = async (id) => {
+            if (!confirm("この意見を本当に削除しますか？")) return;
+            try {
+                await deleteDoc(doc(db, "names", id));
+                loadOpinions();
+            } catch (error) {
+                console.error("削除に失敗しました:", error);
+            }
+        };
+
+        searchForm.addEventListener('submit', () => {
+            const keyword = searchInput.value.trim().toLowerCase();
+            if (!keyword) {
+                displayOpinions(allOpinions);
+                searchSummary.innerHTML = '';
+                return;
+            }
+
+            const filtered = allOpinions.filter(({ data }) =>
+                data.whoToMeet && data.whoToMeet.toLowerCase().includes(keyword)
+            );
+
+            if (isAdmin) {
+                displayOpinions(filtered);
+            } else {
+                opinionsContainer.innerHTML = '<p>検索件数とランキングは表示されますが、意見一覧は管理者のみ閲覧可能です。</p>';
+            }
+
+            const countMap = {};
+            allOpinions.forEach(({ data }) => {
+                const name = data.whoToMeet?.toLowerCase();
+                if (name) countMap[name] = (countMap[name] || 0) + 1;
+            });
+
+            const sortedCounts = Object.entries(countMap).sort((a, b) => b[1] - a[1]);
+            const matchedCount = filtered.length;
+            const rank = sortedCounts.findIndex(([name]) => name.includes(keyword)) + 1;
+
+            searchSummary.innerHTML = `${matchedCount}件見つかりました。${rank ? `（ランキング: ${rank}位）` : ''}`;
+        });
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/[&<>"]/g, s => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'
+            })[s]);
+        }
+    </script>
     <footer class="footer-github">
         <p>📂 GitHubリポジトリ:
             <a href="https://github.com/goudakenv/firebase_deploy" target="_blank" rel="noopener noreferrer">
