@@ -17,7 +17,7 @@
         <ul>
           <li><a href="/">意見箱</a></li>
           <li><a href="/board">掲示板</a></li>
-          <li><a href="index3.html">調整中</a></li>
+          <li id="admin-menu" style="display: none;"><a href="index3.html">調整中</a></li>
         </ul>
       </nav>
     </div>
@@ -135,7 +135,7 @@
 `;
 
           if (isAdminFlag) {
-              // 削除ボタン
+            // 削除ボタン
             const deleteBtn = document.createElement("button");
             deleteBtn.textContent = "削除";
             deleteBtn.style.marginLeft = "10px";
@@ -144,23 +144,23 @@
               loadPosts(isAdminFlag);
             });
 
-  // 編集ボタン
-  const editBtn = document.createElement("button");
-  editBtn.textContent = "編集";
-  editBtn.style.marginLeft = "10px";
-  editBtn.addEventListener("click", () => {
-  // すでに表示されている編集フォームを削除
-  const existingForm = li.querySelector(".edit-form");
-  if (existingForm) {
-    existingForm.remove();
-    return;
-  }
+            // 編集ボタン
+            const editBtn = document.createElement("button");
+            editBtn.textContent = "編集";
+            editBtn.style.marginLeft = "10px";
+            editBtn.addEventListener("click", () => {
+              // すでに表示されている編集フォームを削除
+              const existingForm = li.querySelector(".edit-form");
+              if (existingForm) {
+                existingForm.remove();
+                return;
+              }
 
-  // 編集フォームの要素を作成
-  const formDiv = document.createElement("div");
-  formDiv.className = "edit-form";
+              // 編集フォームの要素を作成
+              const formDiv = document.createElement("div");
+              formDiv.className = "edit-form";
 
-  formDiv.innerHTML = `
+              formDiv.innerHTML = `
     <input type="text" class="edit-title" value="${post.title}" style="width: 90%; margin: 5px 0; font-size: 1.1em;" />
     <br/>
     <textarea class="edit-content" rows="6" style="width: 90%; margin: 5px 0; font-size: 1em;">${post.content}</textarea>
@@ -169,40 +169,40 @@
     <button class="cancel-edit">キャンセル</button>
   `;
 
-  // 編集フォームをliの末尾に追加
-  li.appendChild(formDiv);
+              // 編集フォームをliの末尾に追加
+              li.appendChild(formDiv);
 
-  // 保存ボタン処理
-  formDiv.querySelector(".save-edit").addEventListener("click", async () => {
-    const newTitle = formDiv.querySelector(".edit-title").value.trim();
-    const newContent = formDiv.querySelector(".edit-content").value.trim();
+              // 保存ボタン処理
+              formDiv.querySelector(".save-edit").addEventListener("click", async () => {
+                const newTitle = formDiv.querySelector(".edit-title").value.trim();
+                const newContent = formDiv.querySelector(".edit-content").value.trim();
 
-    if (newTitle && newContent) {
-      try {
-        const postRef = doc(db, "posts", docSnap.id);
-        await setDoc(postRef, {
-          ...post,
-          title: newTitle,
-          content: newContent,
-        });
-        loadPosts(isAdminFlag); // 再読み込み
-      } catch (error) {
-        console.error("編集に失敗:", error);
-        alert("編集に失敗しました。");
-      }
-    } else {
-      alert("タイトルまたは内容が空です。");
-    }
-  });
+                if (newTitle && newContent) {
+                  try {
+                    const postRef = doc(db, "posts", docSnap.id);
+                    await setDoc(postRef, {
+                      ...post,
+                      title: newTitle,
+                      content: newContent,
+                    });
+                    loadPosts(isAdminFlag); // 再読み込み
+                  } catch (error) {
+                    console.error("編集に失敗:", error);
+                    alert("編集に失敗しました。");
+                  }
+                } else {
+                  alert("タイトルまたは内容が空です。");
+                }
+              });
 
-  // キャンセルボタン処理
-  formDiv.querySelector(".cancel-edit").addEventListener("click", () => {
-    formDiv.remove();
-  });
-});
+              // キャンセルボタン処理
+              formDiv.querySelector(".cancel-edit").addEventListener("click", () => {
+                formDiv.remove();
+              });
+            });
 
 
-  li.appendChild(editBtn);
+            li.appendChild(editBtn);
             li.appendChild(deleteBtn);
           }
 
@@ -265,29 +265,38 @@
       });
     });
 
+    const adminMenu = document.getElementById("admin-menu");
+
     onAuthStateChanged(auth, (user) => {
       if (user) {
         isAdmin = user.email === adminEmail;
+
+        // 管理者メニューの表示制御をここに追加
+        adminMenu.style.display = isAdmin ? "inline" : "none";
+
         userInfoDiv.innerHTML = `<div id="user-info-container">ログイン中</div>`;
         userInfoDiv.style.display = "block";
         googleSignInBtn.style.display = "none";
         signOutBtnContainer.style.display = "block";
-
         form.style.display = isAdmin ? "block" : "none";
         loadPosts(isAdmin);
       } else {
         isAdmin = false;
+
+        // 管理者メニューを非表示
+        adminMenu.style.display = "none";
+
         userInfoDiv.style.display = "none";
         googleSignInBtn.style.display = "block";
         signOutBtnContainer.style.display = "none";
-
         form.style.display = "none";
         loadPosts(false);
       }
     });
+
   </script>
 
-<ul id="postsList"></ul>
+  <ul id="postsList"></ul>
 
   <footer class="footer-github">
     <p>📂 GitHubリポジトリ:
