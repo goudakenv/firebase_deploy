@@ -129,19 +129,24 @@
       });
 
       auth.onAuthStateChanged((user) => {
+        const adminMenu = document.getElementById('admin-menu');
         if (user) {
-          userInfoDiv.innerHTML = `
-      <div id="user-info-container">
-        ログイン中
-      </div>
-    `; // ユーザー名は表示しない
+          userInfoDiv.innerHTML = `<div id="user-info-container">ログイン中</div>`;
           userInfoDiv.style.display = 'block';
           googleSignInBtn.style.display = 'none';
           signOutBtnContainer.style.display = 'block';
+
+          // 管理者かどうかを判定してメニューを表示
+          if (user.email === 'propar393@gmail.com') {
+            adminMenu.style.display = 'list-item'; // または 'block'
+          } else {
+            adminMenu.style.display = 'none';
+          }
         } else {
           userInfoDiv.style.display = 'none';
           googleSignInBtn.style.display = 'block';
           signOutBtnContainer.style.display = 'none';
+          adminMenu.style.display = 'none'; // ログアウト時は必ず非表示
         }
       });
 
